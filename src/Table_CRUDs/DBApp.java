@@ -17,7 +17,7 @@ import DB_Exceptions.DBAppException;
 public class DBApp {
 
 	private static String mainDirectory = "databases/";
-	private String dbDirectory;
+	private String dbDirectory ;
 	private File metadata;
 	private Properties dbProps;
 	private String dataTypes[] = { "java.lang.Integer", "java.lang.String", "java.lang.Double", "java.lang.Boolean",
