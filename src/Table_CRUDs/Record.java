@@ -1,5 +1,6 @@
 package Table_CRUDs;
 import java.io.Serializable;
+import java.util.Hashtable;
 import java.util.Vector;
 
 public class Record implements Serializable{
@@ -27,9 +28,17 @@ public class Record implements Serializable{
 	 * @param index the index of the column to be updated
 	 * @param value the new value
 	 */
-	public void addValue(int index , Object value)
+	public void updateValue(int index , Object value)
 	{
 		values.setElementAt(value, index);
+	}
+	public void addValue(int index , Object value)
+	{
+		values.insertElementAt(value, index);
+		
+	}
+	public void addValue(Object value) {
+		values.add(value);
 	}
 	
 	/**
@@ -42,6 +51,10 @@ public class Record implements Serializable{
 		return values.get(index);
 	}
 	
+	public Vector<Object> getValues() {
+		return values;
+	}
+
 	/**
 	 * Display the record values 
 	 */
@@ -52,4 +65,6 @@ public class Record implements Serializable{
 			ret += o.toString() + ", ";
 		return ret;
 	}
+
+	
 }

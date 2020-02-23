@@ -13,22 +13,23 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import DB_Exceptions.DBAppException;
+import DB_Exceptions.DBEngineException;
 
 public class DBApp {
 
 	private static String mainDirectory = "databases/";
-	private String dbDirectory ;
+	private String dbDirectory;
 	private File metadata;
 	private Properties dbProps;
 	private String dataTypes[] = { "java.lang.Integer", "java.lang.String", "java.lang.Double", "java.lang.Boolean",
 			"java.util.Date", "java.awt.Polygon" };
 
 	public void createTable(String strTableName, String strClusteringKeyColumn,
-			Hashtable<String, String> htblColNameType) throws DBAppException {
+			Hashtable<String, String> htblColNameType) throws DBAppException, IOException, DBEngineException {
 		File dir = new File(dbDirectory + strTableName);
 		// TO DO
-		//    	if(dir.exists())
-		//    		throw new DBAppException("There exists a table with this name.");
+		// if(dir.exists())
+		// throw new DBAppException("There exists a table with this name.");
 
 		boolean validColType = checkColumnTypes(htblColNameType);
 		if (!validColType)
@@ -40,27 +41,40 @@ public class DBApp {
 		}
 		htblColNameType.put("TouchDate", "java.util.Date");
 		int maxTuplesPerPage = Integer.parseInt(dbProps.getProperty("MaximumRowsCountinPage"));
-		new Table(dbDirectory, strTableName, htblColNameType,  strClusteringKeyColumn, maxTuplesPerPage, indexOrder);
+		new Table(dbDirectory, strTableName, htblColNameType, strClusteringKeyColumn, maxTuplesPerPage);
 		System.out.println("Table is created successfully: " + strTableName);
 
 	}
 
-	
-	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException {
-		
+	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws Exception {
+		Table t = getTable(strTableName);
+		t.insertIntoTable(htblColNameValue);
 
 	}
 
-	private Table getTable(String strTableName) throws FileNotFoundException, IOException, ClassNotFoundException
-    {
-    	File tableFile = new File(dbDirectory+strTableName+"/"+strTableName+".class");
-    	if(!tableFile.exists())
-    		return null;
-    	ObjectInputStream ois = new ObjectInputStream(new FileInputStream(tableFile));
-    	Table table = (Table) ois.readObject();
-    	ois.close();
-    	return table;
-    }
+	public void updateTable(String strTableName, String strKey, Hashtable<String, Object> htblColNameValue)
+			throws DBAppException, FileNotFoundException, ClassNotFoundException, IOException {
+		Table t = getTable(strTableName);
+		t.updateTable(strKey, htblColNameValue);
+
+	}
+
+	public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws Exception {
+		Table t=getTable(strTableName);
+		t.deleteFromTable(htblColNameValue);
+		
+	}
+
+	private Table getTable(String strTableName) throws FileNotFoundException, IOException, ClassNotFoundException {
+		File tableFile = new File(dbDirectory + strTableName + "/" + strTableName + ".class");
+		if (!tableFile.exists())
+			return null;
+		ObjectInputStream ois = new ObjectInputStream(new FileInputStream(tableFile));
+		Table table = (Table) ois.readObject();
+		ois.close();
+		return table;
+	}
+
 	public void init(Integer maximumRowsCountinPage, Integer indexOrder) throws IOException {
 
 		File dbDir = new File(dbDirectory = mainDirectory + "AplusTree/");
@@ -87,7 +101,6 @@ public class DBApp {
 			out.flush();
 			out.close();
 		}
-
 
 	}
 
@@ -118,4 +131,72 @@ public class DBApp {
 		pr.close();
 	}
 
+	public static void main(String[] args) throws Exception {
+
+		DBApp dbapp = new DBApp();
+		dbapp.init(2, 2);
+
+		String strTableName = "Student";
+		Hashtable htblColNameType = new Hashtable();
+		htblColNameType.put("id", "java.lang.Integer");
+		htblColNameType.put("name", "java.lang.String");
+		htblColNameType.put("gpa", "java.lang.Double");
+		dbapp.createTable(strTableName, "id", htblColNameType);
+
+		Hashtable htblColNameValue = new Hashtable();
+		htblColNameValue.put("id", new Integer(2343432));
+		htblColNameValue.put("name", new String("Ahmed Noor"));
+		htblColNameValue.put("gpa", new Double(0.95));
+		dbapp.insertIntoTable(strTableName, htblColNameValue);
+
+		htblColNameValue.clear();
+		htblColNameValue.put("id", new Integer(1));
+		htblColNameValue.put("name", new String("Ahmed Noor"));
+		htblColNameValue.put("gpa", new Double(0.95));
+		dbapp.insertIntoTable(strTableName, htblColNameValue);
+
+		htblColNameValue.clear();
+		htblColNameValue.put("id", new Integer(1));
+		htblColNameValue.put("name", new String("Dalia Noor"));
+		htblColNameValue.put("gpa", new Double(1.25));
+		dbapp.insertIntoTable(strTableName, htblColNameValue);
+
+		htblColNameValue.clear();
+		htblColNameValue.put("id", new Integer(1));
+		htblColNameValue.put("name", new String("John Noor"));
+		htblColNameValue.put("gpa", new Double(1.5));
+		dbapp.insertIntoTable(strTableName, htblColNameValue);
+
+		htblColNameValue.clear();
+		htblColNameValue.put("id", new Integer(78452));
+		htblColNameValue.put("name", new String("Zaky Noor"));
+		htblColNameValue.put("gpa", new Double(0.88));
+		dbapp.insertIntoTable(strTableName, htblColNameValue);
+		htblColNameValue.clear();
+		htblColNameValue.put("id", new Integer("1"));
+		dbapp.deleteFromTable(strTableName, htblColNameValue);
+		
+//		try {
+			// Reading the object from a file
+//			FileInputStream file = new FileInputStream(
+//					"C:\\Users\\SU\\Documents\\GitHub\\A-Tree\\databases\\AplusTree\\Student\\Student.class");
+//			ObjectInputStream in = new ObjectInputStream(file);
+
+			// Method for deserialization of object
+		Table t = dbapp.getTable(strTableName);
+		
+			System.out.println(t.toString());
+//
+//			in.close();
+//			file.close();
+
+			System.out.println("Object has been deserialized ");
+//		}
+
+//		catch (IOException ex) {
+//			System.out.println("IOException is caught");
+//			ex.printStackTrace();
+//		}
+
+	}
 }

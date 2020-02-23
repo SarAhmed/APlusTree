@@ -20,6 +20,13 @@ public class Page implements Serializable{
 	private Vector <Record> records;
 	private String path;
 	
+
+	
+	public Vector<Record> getRecords() {
+		return records;
+	}
+
+	
 	/**
 	 * Create a new page specifying the maximum number of records it can hold
 	 * and the path at which the page will be stored relative to the executable files
@@ -66,10 +73,11 @@ public class Page implements Serializable{
 	 * @throws IOException If an I/O error occurred
 	 */
 	
-	public void removeRecord(int index) throws IOException
+	public Record removeRecord(int index) throws IOException
 	{
-		records.remove(index) ;
+		Record r=records.remove(index) ;
 		save();
+		return r;
 	}
 	
 	/**
@@ -106,5 +114,13 @@ public class Page implements Serializable{
 		if(index >= 0 && index < this.size())
 			return records.get(index);
 		throw new IndexOutOfBoundsException(""+index);
+	}
+	
+	public String toString() {
+		String r="";
+		for(Record rec: records) {
+			r+=rec.toString()+"\n";
+		}
+		return r;
 	}
 }
