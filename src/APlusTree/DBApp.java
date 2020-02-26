@@ -51,10 +51,10 @@ public class DBApp {
 
 	}
 
-	public void updateTable(String strTableName, String strKey, Hashtable<String, Object> htblColNameValue)
+	public void updateTable(String strTableName, String strClusteringKey, Hashtable<String, Object> htblColNameValue)
 			throws DBAppException, FileNotFoundException, ClassNotFoundException, IOException {
 		Table t = getTable(strTableName);
-		t.updateTable(strKey, htblColNameValue);
+		t.updateTable(strClusteringKey, htblColNameValue);
 
 	}
 
@@ -82,6 +82,7 @@ public class DBApp {
 		String s="";
 		
 		new File(s=(dbDirectory + "config")).mkdirs();
+		new File(s=(dbDirectory + "classes/APlusTree")).mkdirs();
 
 		
 		dbProps = new java.util.Properties();
@@ -94,7 +95,7 @@ public class DBApp {
 		this.metadata = new File(dbDirectory + "data/" + "/metadata.csv");
 		if (this.metadata.createNewFile()) {
 			PrintWriter out = new PrintWriter(this.metadata);
-			out.println("Table Name, Column Name, Column Type, Key, Indexed");
+			out.println("Table Name, Column Name, Column Type, ClusteringKey, Indexed");
 			out.flush();
 			out.close();
 		}

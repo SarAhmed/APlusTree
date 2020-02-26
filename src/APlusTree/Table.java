@@ -1,5 +1,6 @@
 package APlusTree;
 
+import java.awt.Polygon;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,7 +10,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.Map.Entry;
 import java.util.Vector;
@@ -83,7 +86,7 @@ public class Table implements Serializable {
 			Comparable inputKey = getComparable(value, type);
 			// TO DO use DBException not Exception
 			if (inputKey == null)
-				throw new Exception(" the type of key is not comparable");
+				throw new DBAppException(" the type of key is not comparable");
 
 			int pageIdx = -1;
 			int recordIdx = -1;
@@ -161,8 +164,13 @@ public class Table implements Serializable {
 			return result;
 		}
 		// TO DO
-		// throw new Exception("invalid input format");
-		return null;
+		 throw new DBAppException("invalid input format");
+	}
+	
+	public static String getDate() {
+		SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");  
+	    Date date = new Date();  
+	    return formatter.format(date);
 	}
 
 	public boolean insertIntoTable(Hashtable<String, Object> htblColNameValue) throws Exception {
@@ -175,8 +183,16 @@ public class Table implements Serializable {
 		ArrayList<String[]> metaInfo = this.getColInfo();
 		for (int i = 0; i < metaInfo.size(); i++) {
 			Object value = htblColNameValue.getOrDefault(metaInfo.get(i)[1], null);
+			//updated
+			if(value!=null && value instanceof Polygon ) {
+				value=new DBPolygon((Polygon)value);
+			}
 			r.addValue(value);
 		}
+		// TO DO replace this with htblColName.add("touch date",getDate()) at the beginning if it's inserted in metadata
+			r.addValue(getDate());
+		
+		
 		int pageDirectorySize = pagesDirectory.size();
 		boolean inserted = false;
 
@@ -260,11 +276,10 @@ public class Table implements Serializable {
 
 	}
 
-	public boolean updateTable(String strKey, Hashtable<String, Object> htblColNameValue)
+	public boolean updateTable(String strClusteringKey, Hashtable<String, Object> htblColNameValue)
 			throws DBAppException, IOException {
 		if (!checkValidInput(htblColNameValue)) {
-			// TO DO throw invalid input format exception
-			return false;
+			throw new DBAppException("Invalid Input Format");
 		}
 
 		int keyIdx = this.getColIdx(getClusteringKey());
@@ -275,11 +290,11 @@ public class Table implements Serializable {
 			if (tableInfo.get(i)[3].trim().equals("True")) {
 				type = tableInfo.get(i)[2].trim();
 				if (type.equals("java.lang.Integer")) {
-					searchKey = Integer.parseInt(strKey);
+					searchKey = Integer.parseInt(strClusteringKey);
 				} else if (type.equals("java.lang.String")) {
-					searchKey = strKey;
+					searchKey = strClusteringKey;
 				} else if (type.equals("java.lang.Double")) {
-					searchKey = Double.parseDouble(strKey);
+					searchKey = Double.parseDouble(strClusteringKey);
 				}
 				// TO DO how to compare and parse polygon from string
 				break;
@@ -303,6 +318,11 @@ public class Table implements Serializable {
 						currRecord.updateValue(colIdx, value);
 						updated = true;
 					}
+					//TO DO if touchDate is in MetaData => add to htblColNames.add(String touchDate,getDate) at the begning of the method
+					if(updated) {
+						currRecord.updateValue(currRecord.getValues().size()-1, getDate());
+					}
+					
 				} else if (currKey.compareTo(searchKey) > 0) {
 					stop = true;
 					break;
