@@ -235,12 +235,8 @@ public class Table implements Serializable {
 			c = (String) value;
 		} else if (type.equals("java.lang.Double")) {
 			c = (Double) value;
-		} else if (type.equals("java.lang.Boolean")) {
-			// this is a case which won't occur since you can't have boolean as clustering
-			// key
 		} else if (type.equals("java.awt.Polygon")) {
-			// this is a case which won't occur since you can't have polygon as clustering
-			// key
+			c=(DBPolygon)value;
 		}
 		return c;
 
@@ -295,8 +291,9 @@ public class Table implements Serializable {
 					searchKey = strClusteringKey;
 				} else if (type.equals("java.lang.Double")) {
 					searchKey = Double.parseDouble(strClusteringKey);
+				}else if(type.equals("java.awt.Polygon")) {
+					searchKey=new DBPolygon(strClusteringKey);
 				}
-				// TO DO how to compare and parse polygon from string
 				break;
 			}
 		}
