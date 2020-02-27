@@ -23,8 +23,6 @@ public int compareTo(DBPolygon o) {
 
 	double OArea=o.polygon.getBounds().getSize().getWidth()*o.polygon.getBounds().getSize().getHeight();
 	return  (Math.abs(curArea-OArea))<1e-6?0:(curArea>OArea)?1:-1;
-}public static void main(String[] args) {
-	getPolygon("(10,20),(30,30),(40,40),(50,60)");
 }
 private static Polygon getPolygon(String s) {
 	StringTokenizer st= new StringTokenizer(s, "(),");
