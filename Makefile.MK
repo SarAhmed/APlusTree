@@ -4,8 +4,8 @@ compile-files:
 	javac src/APlusTree/*.java -d classes/APlusTree/
 
 run-DBApp:
-	java -classpath classes/APlusTree/
+	java -classpath classes/APlusTree/DBApp
 
 clean:
-	rm -r classes/APlusTree/
+	rm -r classes/APlusTree
 	rm -r data
