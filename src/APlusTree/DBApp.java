@@ -82,7 +82,7 @@ public class DBApp {
 		String s="";
 		
 		new File(s=(dbDirectory + "config")).mkdirs();
-		new File(s=(dbDirectory + "classes/APlusTree")).mkdirs();
+		//new File(s=(dbDirectory + "classes/APlusTree")).mkdirs();
 
 		
 		dbProps = new java.util.Properties();
@@ -129,7 +129,8 @@ public class DBApp {
 		pr.close();
 	}
 
-	public static void main(String[] args) throws Exception {
+	
+public static void main(String[] args) throws Exception {
 
 		DBApp dbapp = new DBApp();
 		dbapp.init();
