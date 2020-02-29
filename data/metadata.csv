@@ -1,4 +1,4 @@
 Table Name, Column Name, Column Type, ClusteringKey, Indexed
-Student, gpa, java.lang.Double, False, False
+Student, gpa, java.lang.Integer, False, False
 Student, name, java.lang.String, False, False
 Student, id, java.lang.Integer, True, False

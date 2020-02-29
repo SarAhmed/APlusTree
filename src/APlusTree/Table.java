@@ -12,9 +12,11 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Map.Entry;
+import java.util.StringTokenizer;
 import java.util.Vector;
 
 
@@ -43,12 +45,19 @@ public class Table implements Serializable {
 		saveTable();
 	}
 
-	private void initializeColumnsHeader() {
+	private void initializeColumnsHeader() throws IOException {
 		tableHeader = "";
-		for (Entry<String, String> entry : colTypes.entrySet()) {
-			numOfColumns++;
-			tableHeader += entry.getKey() + ", ";
+		ArrayList<String[]> colInfo=getColInfo();
+		for(int i=0;i<colInfo.size();i++) {
+			tableHeader+=colInfo.get(i)[1]+", ";
 		}
+
+		tableHeader+="Touch Date";
+		
+//		for (Entry<String, String> entry : colTypes.entrySet()) {
+//			numOfColumns++;
+//			tableHeader += entry.getKey() + ", ";
+//		}
 	}
 
 	private void createDirectory() {
@@ -237,6 +246,8 @@ public class Table implements Serializable {
 			c = (Double) value;
 		} else if (type.equals("java.awt.Polygon")) {
 			c=(DBPolygon)value;
+		}else if(type.equals("java.util.Date")) {
+			c=(java.util.Date)value;
 		}
 		return c;
 
@@ -249,6 +260,13 @@ public class Table implements Serializable {
 				return i;
 		}
 		return -1;
+	}
+	private Date strToDateParser(String s) {
+		StringTokenizer st= new StringTokenizer(s,"-");
+		int year=Integer.parseInt(st.nextToken());
+		int month=Integer.parseInt(st.nextToken());
+		int day=Integer.parseInt(st.nextToken());
+		return new java.util.Date(year,month, day);
 	}
 
 	public ArrayList<String[]> getColInfo() throws IOException {
@@ -293,6 +311,8 @@ public class Table implements Serializable {
 					searchKey = Double.parseDouble(strClusteringKey);
 				}else if(type.equals("java.awt.Polygon")) {
 					searchKey=new DBPolygon(strClusteringKey);
+				}else if (type.equals("java.util.Date")) {
+					searchKey=strToDateParser(strClusteringKey);
 				}
 				break;
 			}
@@ -334,6 +354,7 @@ public class Table implements Serializable {
 	}
 
 	public void deleteFromTable(Hashtable<String, Object> htblColNameValue) throws Exception {
+		getColInfo();
 		if(!checkValidInput(htblColNameValue)) {
 			throw new Exception("invalid data types");
 		}
@@ -343,6 +364,7 @@ public class Table implements Serializable {
 			for(int k=0;k<p.size();k++) {
 				Record currRecord=p.get(k);
 				if(matchRecord(currRecord, htblColNameValue)) {
+					//System.out.println("there is a match");
 					p.removeRecord(k--);
 				}
 			}
@@ -361,11 +383,19 @@ public class Table implements Serializable {
 
 	public boolean matchRecord(Record record, Hashtable<String, Object> htblColNameValue) {
 		String[] header = tableHeader.split(", ");
-		for (int i = 1; i < header.length; i++) {
+		for (int i = 0; i < header.length-1; i++) {
 			if (htblColNameValue.containsKey(header[i].trim())) {
 				Vector<Object> r = record.getValues();
 				// put in mind whether it compares using refrence or value
-				if (!htblColNameValue.get(header[i].trim()).equals(r.get(i-1)))
+//				System.out.println("header : "+header[i].trim());
+//				System.out.println("header value : "+htblColNameValue.get(header[i].trim()));
+//				System.out.println("record value : "+r.get(i));
+//				if(i==0) {
+//					System.out.println("i m here");
+//					
+//				}
+//				System.out.println(htblColNameValue.get(header[i].trim()).equals(r.get(i)));
+				if (!htblColNameValue.get(header[i].trim()).equals(r.get(i)))
 					return false;
 			}
 		}
@@ -396,21 +426,6 @@ public class Table implements Serializable {
 		return p;
 	}
 
-	// public boolean equals(Hashtable<String, Object> htblColNameValue, Record
-	// record) throws IOException {
-	// ArrayList<String> colNames = getColNames();
-	// for (Entry<String, Object> entry : htblColNameValue.entrySet()) {
-	// String colName = entry.getKey();
-	// Object value = entry.getValue();
-	// for (int i = 0; i < colNames.size(); i++) {
-	// String name = colNames.get(i).split(" ")[0];
-	// if(name.equals(colName)
-	//
-	// }
-	//
-	// }
-	// return false;
-	// }
 	public boolean checkValidInput(Hashtable<String, Object> htblColNameValue) {
 		for (Entry<String, Object> entry : htblColNameValue.entrySet()) {
 			String colName = entry.getKey();

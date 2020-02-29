@@ -7,5 +7,4 @@ run-DBApp:
 	java -classpath classes APlusTree.DBApp
 
 clean:
-	rm -r classes/APlusTree
-	rm -r data
+	rm -r classes/APlusTree/

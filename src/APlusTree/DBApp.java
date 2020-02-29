@@ -1,9 +1,9 @@
 package APlusTree;
 
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -16,7 +16,7 @@ import java.util.Properties;
 public class DBApp {
 
 	private static String mainDirectory = "";
-	private String dbDirectory;
+	private String dbDirectory="";
 	private File metadata;
 	private Properties dbProps;
 	private String dataTypes[] = { "java.lang.Integer", "java.lang.String", "java.lang.Double", "java.lang.Boolean",
@@ -83,7 +83,7 @@ public class DBApp {
 		
 		new File(s=(dbDirectory + "config")).mkdirs();
 		//new File(s=(dbDirectory + "classes/APlusTree")).mkdirs();
-
+		
 		
 		dbProps = new java.util.Properties();
 		FileInputStream fis= new FileInputStream("config/DBApp.config");
@@ -129,7 +129,10 @@ public class DBApp {
 		pr.close();
 	}
 
-	
+public String displayTable(String tableName) throws FileNotFoundException, ClassNotFoundException, IOException {
+	Table t= (Table)this.getTable(tableName);
+	return t.toString();
+}
 public static void main(String[] args) throws Exception {
 
 		DBApp dbapp = new DBApp();
@@ -184,7 +187,7 @@ public static void main(String[] args) throws Exception {
 			// Method for deserialization of object
 		Table t = dbapp.getTable(strTableName);
 		
-			System.out.println(t.toString());
+		//	System.out.println(t.toString());
 
 			System.out.println("Object has been deserialized ");
 //		}
