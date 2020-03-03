@@ -1,5 +1,7 @@
 package APlusTree;
 
+import java.awt.Polygon;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.Random;
 
@@ -8,8 +10,9 @@ public class DBAppTest {
 	
 public static void main(String[] args) throws Exception {
 		DBApp db = new DBApp();
-		//testInsert(db);
-		testUpdate(db);
+		testInsert(db);
+		//testUpdate(db);
+		//testDelete(db);
 		System.out.println(db.displayTable("Student"));
 	}
 
@@ -20,19 +23,33 @@ public static void main(String[] args) throws Exception {
 		//1.Student Table
 		String tableName = "Student";
 		Hashtable<String, String> htblColNameType = new Hashtable<String, String>();
-		htblColNameType.put("id", "java.lang.Integer");
-		htblColNameType.put("name", "java.lang.String");
-		htblColNameType.put("gpa", "java.lang.Integer");
-		db.createTable(tableName,"id",htblColNameType);
+//		htblColNameType.put("id", "java.lang.Integer");
+//		htblColNameType.put("name", "java.lang.String");
+//		htblColNameType.put("gpa", "java.lang.Integer");
+		htblColNameType.put("date", "java.util.Date");
+		htblColNameType.put("poly", "java.awt.Polygon");
+		
+		db.createTable(tableName,"date",htblColNameType);
 		Random rnd= new Random();
 		
 		for(int i = 0 ; i < 52 ; i++) {
 			Hashtable<String, Object> htblColNameValue = new Hashtable();
 			int id= rnd.nextInt(10);
-			htblColNameValue.put("id", new Integer(id));
-			htblColNameValue.put("name", new String("Student"+(id)));
-			htblColNameValue.put("gpa", new Integer(rnd.nextInt(100)));
-			
+//			htblColNameValue.put("id", new Integer(id));
+//			htblColNameValue.put("name", new String("Student"+(id)));
+//			htblColNameValue.put("gpa", new Integer(rnd.nextInt(100)));
+			int year= 2000;
+			int month= 1+rnd.nextInt(12);
+			int day= 1+rnd.nextInt(29);
+			htblColNameValue.put("date",new Date(year,month,day));
+			int n=3+rnd.nextInt(5);
+			int[]x =new int[n];
+			int[] y=new int[n];
+			for(int j=0;j<n;j++) {
+				x[j]=rnd.nextInt(10);
+				y[j]=rnd.nextInt(10);
+			}
+			htblColNameValue.put("poly",new Polygon(x,y,n));
 			db.insertIntoTable("Student", htblColNameValue);
 		}
 			
@@ -45,20 +62,24 @@ public static void main(String[] args) throws Exception {
 	
 		Hashtable<String, Object> htblColNameValue = new Hashtable();
 		htblColNameValue.clear();
-		htblColNameValue.put("id", 1);
+		int[]x= {8,8,9};
+		int[]y= {2,1,0};
+		
+		htblColNameValue.put("poly", new Polygon(x,y,3));
 db.deleteFromTable(tableName, htblColNameValue);		
 		
 		
 		
 	}
 	
+
 	public static void testUpdate(DBApp db) throws Exception {
 		String tableName = "Student";
 	
 		Hashtable<String, Object> htblColNameValue = new Hashtable();
 		htblColNameValue.clear();
-		htblColNameValue.put("name", "moh");
-db.updateTable(tableName, ""+6, htblColNameValue);
+		htblColNameValue.put("name", "momo");
+db.updateTable(tableName, "(8 ,2 ) (8 ,1 ) (9 ,0)", htblColNameValue);
 		
 		
 		

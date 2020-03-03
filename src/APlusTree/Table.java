@@ -12,8 +12,8 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
@@ -183,6 +183,21 @@ public class Table implements Serializable {
 	}
 
 	public boolean insertIntoTable(Hashtable<String, Object> htblColNameValue) throws Exception {
+		
+		// from here i will only make every Polygon as DBPolygon
+		ArrayList<String> polygonColumns=new ArrayList();
+		for(Entry<String,Object> e:htblColNameValue.entrySet()) {
+			if(e.getValue() instanceof Polygon) {
+				polygonColumns.add(e.getKey());
+			}
+		}
+		
+		for( String s:polygonColumns) {
+			Polygon p=(Polygon)htblColNameValue.get(s);
+			htblColNameValue.put(s, new DBPolygon(p));
+		}
+		
+		// this is the end of making every polygon as DBPolygon
 		int[] location = search(htblColNameValue);
 		if (location == null)
 			throw new DBAppException("Invalid record format");
@@ -246,6 +261,7 @@ public class Table implements Serializable {
 			c = (Double) value;
 		} else if (type.equals("java.awt.Polygon")) {
 			c=(DBPolygon)value;
+		
 		}else if(type.equals("java.util.Date")) {
 			c=(java.util.Date)value;
 		}
@@ -262,7 +278,7 @@ public class Table implements Serializable {
 		return -1;
 	}
 	private Date strToDateParser(String s) {
-		StringTokenizer st= new StringTokenizer(s,"-");
+		StringTokenizer st= new StringTokenizer(s,"- ");
 		int year=Integer.parseInt(st.nextToken());
 		int month=Integer.parseInt(st.nextToken());
 		int day=Integer.parseInt(st.nextToken());
@@ -292,6 +308,22 @@ public class Table implements Serializable {
 
 	public boolean updateTable(String strClusteringKey, Hashtable<String, Object> htblColNameValue)
 			throws DBAppException, IOException {
+		// from here i will only make every Polygon as DBPolygon
+		ArrayList<String> polygonColumns=new ArrayList();
+		for(Entry<String,Object> e:htblColNameValue.entrySet()) {
+			if(e.getValue() instanceof Polygon) {
+				polygonColumns.add(e.getKey());
+			}
+		}
+		
+		for( String s:polygonColumns) {
+			Polygon p=(Polygon)htblColNameValue.get(s);
+			htblColNameValue.put(s, new DBPolygon(p));
+		}
+		
+		// this is the end of making every polygon as DBPolygon
+	
+		
 		if (!checkValidInput(htblColNameValue)) {
 			throw new DBAppException("Invalid Input Format");
 		}
@@ -355,6 +387,23 @@ public class Table implements Serializable {
 
 	public void deleteFromTable(Hashtable<String, Object> htblColNameValue) throws Exception {
 		getColInfo();
+		
+		// from here i will only make every Polygon as DBPolygon
+		ArrayList<String> polygonColumns=new ArrayList();
+		for(Entry<String,Object> e:htblColNameValue.entrySet()) {
+			if(e.getValue() instanceof Polygon) {
+				polygonColumns.add(e.getKey());
+			}
+		}
+		
+		for( String s:polygonColumns) {
+			Polygon p=(Polygon)htblColNameValue.get(s);
+			htblColNameValue.put(s, new DBPolygon(p));
+		}
+		
+		// this is the end of making every polygon as DBPolygon
+	
+		
 		if(!checkValidInput(htblColNameValue)) {
 			throw new Exception("invalid data types");
 		}
@@ -432,10 +481,16 @@ public class Table implements Serializable {
 			Object value = entry.getValue();
 			/* Check that a column with this name already exists */
 			if (!this.colTypes.containsKey(colName))
+				{
+			//	System.out.println("the column name doesn't exist");
 				return false;
+				}
 			/* Check for valid column type */
 			if (!checkType(value, this.colTypes.get(colName)))
+				{
+				//System.out.println("the col type is invalid");
 				return false;
+				}
 
 		}
 		return true;
@@ -443,6 +498,11 @@ public class Table implements Serializable {
 
 	private boolean checkType(Object value, String type) {
 		String actualType = (value.getClass().toString().split(" "))[1].trim();
+		//System.out.println("actual type is "+actualType);
+		
+		if(actualType.equals("APlusTree.DBPolygon")&&type.equals("java.awt.Polygon")) {
+			return true;
+		}
 		return actualType.equals(type);
 
 	}

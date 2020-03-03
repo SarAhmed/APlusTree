@@ -137,59 +137,59 @@ public static void main(String[] args) throws Exception {
 
 		DBApp dbapp = new DBApp();
 		dbapp.init();
-
-		String strTableName = "Student";
-		Hashtable htblColNameType = new Hashtable();
-		htblColNameType.put("id", "java.lang.Integer");
-		htblColNameType.put("name", "java.lang.String");
-		htblColNameType.put("gpa", "java.lang.Double");
-		dbapp.createTable(strTableName, "id", htblColNameType);
-
-		Hashtable htblColNameValue = new Hashtable();
-		htblColNameValue.put("id", new Integer(2343432));
-		htblColNameValue.put("name", new String("Ahmed Noor"));
-		htblColNameValue.put("gpa", new Double(0.95));
-		dbapp.insertIntoTable(strTableName, htblColNameValue);
-
-		htblColNameValue.clear();
-		htblColNameValue.put("id", new Integer(1));
-		htblColNameValue.put("name", new String("Ahmed Noor"));
-		htblColNameValue.put("gpa", new Double(0.95));
-		dbapp.insertIntoTable(strTableName, htblColNameValue);
-
-		htblColNameValue.clear();
-		htblColNameValue.put("id", new Integer(1));
-		htblColNameValue.put("name", new String("Dalia Noor"));
-		htblColNameValue.put("gpa", new Double(1.25));
-		dbapp.insertIntoTable(strTableName, htblColNameValue);
-
-		htblColNameValue.clear();
-		htblColNameValue.put("id", new Integer(1));
-		htblColNameValue.put("name", new String("John Noor"));
-		htblColNameValue.put("gpa", new Double(1.5));
-		dbapp.insertIntoTable(strTableName, htblColNameValue);
-
-		htblColNameValue.clear();
-		htblColNameValue.put("id", new Integer(78452));
-		htblColNameValue.put("name", new String("Zaky Noor"));
-		htblColNameValue.put("gpa", new Double(0.88));
-		dbapp.insertIntoTable(strTableName, htblColNameValue);
-		htblColNameValue.clear();
-		htblColNameValue.put("id", new Integer("1"));
-		dbapp.deleteFromTable(strTableName, htblColNameValue);
-		
-//		try {
-			// Reading the object from a file
-//			FileInputStream file = new FileInputStream(
-//					"C:\\Users\\SU\\Documents\\GitHub\\A-Tree\\databases\\AplusTree\\Student\\Student.class");
-//			ObjectInputStream in = new ObjectInputStream(file);
-
-			// Method for deserialization of object
-		Table t = dbapp.getTable(strTableName);
-		
-		//	System.out.println(t.toString());
-
-			System.out.println("Object has been deserialized ");
+//
+//		String strTableName = "Student";
+//		Hashtable htblColNameType = new Hashtable();
+//		htblColNameType.put("id", "java.lang.Integer");
+//		htblColNameType.put("name", "java.lang.String");
+//		htblColNameType.put("gpa", "java.lang.Double");
+//		dbapp.createTable(strTableName, "id", htblColNameType);
+//
+//		Hashtable htblColNameValue = new Hashtable();
+//		htblColNameValue.put("id", new Integer(2343432));
+//		htblColNameValue.put("name", new String("Ahmed Noor"));
+//		htblColNameValue.put("gpa", new Double(0.95));
+//		dbapp.insertIntoTable(strTableName, htblColNameValue);
+//
+//		htblColNameValue.clear();
+//		htblColNameValue.put("id", new Integer(1));
+//		htblColNameValue.put("name", new String("Ahmed Noor"));
+//		htblColNameValue.put("gpa", new Double(0.95));
+//		dbapp.insertIntoTable(strTableName, htblColNameValue);
+//
+//		htblColNameValue.clear();
+//		htblColNameValue.put("id", new Integer(1));
+//		htblColNameValue.put("name", new String("Dalia Noor"));
+//		htblColNameValue.put("gpa", new Double(1.25));
+//		dbapp.insertIntoTable(strTableName, htblColNameValue);
+//
+//		htblColNameValue.clear();
+//		htblColNameValue.put("id", new Integer(1));
+//		htblColNameValue.put("name", new String("John Noor"));
+//		htblColNameValue.put("gpa", new Double(1.5));
+//		dbapp.insertIntoTable(strTableName, htblColNameValue);
+//
+//		htblColNameValue.clear();
+//		htblColNameValue.put("id", new Integer(78452));
+//		htblColNameValue.put("name", new String("Zaky Noor"));
+//		htblColNameValue.put("gpa", new Double(0.88));
+//		dbapp.insertIntoTable(strTableName, htblColNameValue);
+//		htblColNameValue.clear();
+//		htblColNameValue.put("id", new Integer("1"));
+//		dbapp.deleteFromTable(strTableName, htblColNameValue);
+//		
+////		try {
+//			// Reading the object from a file
+////			FileInputStream file = new FileInputStream(
+////					"C:\\Users\\SU\\Documents\\GitHub\\A-Tree\\databases\\AplusTree\\Student\\Student.class");
+////			ObjectInputStream in = new ObjectInputStream(file);
+//
+//			// Method for deserialization of object
+//		Table t = dbapp.getTable(strTableName);
+//		
+//		//	System.out.println(t.toString());
+//
+//			System.out.println("Object has been deserialized ");
 //		}
 
 //		catch (IOException ex) {
