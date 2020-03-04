@@ -12,6 +12,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -277,12 +278,19 @@ public class Table implements Serializable {
 		}
 		return -1;
 	}
+	@SuppressWarnings("deprecation")
 	private Date strToDateParser(String s) {
 		StringTokenizer st= new StringTokenizer(s,"- ");
 		int year=Integer.parseInt(st.nextToken());
 		int month=Integer.parseInt(st.nextToken());
 		int day=Integer.parseInt(st.nextToken());
-		return new java.util.Date(year,month, day);
+		Calendar cal = Calendar.getInstance();
+		cal.set(Calendar.YEAR, year);
+		cal.set(Calendar.MONTH, month-1);
+		cal.set(Calendar.DAY_OF_MONTH, day);
+		Date dateRepresentation = cal.getTime();
+	
+		return dateRepresentation;
 	}
 
 	public ArrayList<String[]> getColInfo() throws IOException {
