@@ -7,41 +7,36 @@ public class Record implements Serializable{
 
 	
 	private static final long serialVersionUID = 1L;
-	private Vector<Object> values;
+	private Vector<Object> vals;
 		
-	public Record()
-	{
-		values = new Vector<Object>();
+	public Record(){
+		vals = new Vector<Object>();
+	}
+	public Object get(int idx){
+		return vals.get(idx);
 	}
 	
-	public void updateValue(int index , Object value)
-	{
-		values.setElementAt(value, index);
-	}
-	public void addValue(int index , Object value)
-	{
-		values.insertElementAt(value, index);
+	public void add(int idx , Object val){
+		vals.insertElementAt(val, idx);
 		
 	}
-	public void addValue(Object value) {
-		values.add(value);
+	public void update(int idx , Object val){
+		vals.setElementAt(val, idx);
 	}
-	
-	public Object get(int index)
-	{
-		return values.get(index);
-	}
-	
 	public Vector<Object> getValues() {
-		return values;
+		return vals;
 	}
+	public void add(Object val) {
+		vals.add(val);
+	}
+	
+	
 
-	public String toString()
-	{
-		String ret = "";
-		for(Object o: values)
-			ret += o.toString() + ", ";
-		return ret;
+	public String toString(){
+		String s = "";
+		for(Object o: vals)
+			s += o.toString() + ", ";
+		return s;
 	}
 
 	

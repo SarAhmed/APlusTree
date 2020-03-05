@@ -13,67 +13,48 @@ public class Page implements Serializable{
 	private static final long serialVersionUID = 1L;
 	private int maxSize;
 	private Vector <Record> records;
-	private String path;
+	private String directory;
 	
 
 	
-	public Vector<Record> getRecords() {
-		return records;
-	}
-
 	
-	public Page(int maxSize, String path) throws IOException
+	public Page(int maxSize, String directory) throws IOException
 	{
-		this.path = path;
 		this.maxSize = maxSize;
+		this.directory = directory;
 		this.records = new Vector<>();
 		this.save();
 	}
 	
-	public boolean isFull()
-	{
-		return records.size() == maxSize;
-	}
 	
-	public boolean addRecord(Record record,int index) throws IOException
-	{
+	public boolean add(Record record,int idx) throws IOException{
 		if(isFull())
 			return false;
-		records.insertElementAt(record,index);
+		records.insertElementAt(record,idx);
 		save();
 		return true;
 	}
 	
+	public boolean isFull(){
+		return records.size() == maxSize;
+	}
 	
-	public Record removeRecord(int index) throws IOException
-	{
-		Record r=records.remove(index) ;
+	public Record remove(int idx) throws IOException{
+		Record r=records.remove(idx) ;
 		save();
 		return r;
 	}
-	
-	public void save() throws IOException
-	{
-		File f = new File(path);
-		if(!f.exists())
-			f.delete();
-		f.createNewFile();
-		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(f));
-		oos.writeObject(this);
-		oos.close();
+	// copy rights @ Ahmad Al-Sagheer
+	public Record get(int idx){
+		if(idx >= 0 && idx < this.size())
+			return records.get(idx);
+		throw new IndexOutOfBoundsException(""+idx);
 	}
 	
-	public int size()
-	{
+	public int size(){
 		return records.size();
 	}
 	
-	public Record get(int index)
-	{
-		if(index >= 0 && index < this.size())
-			return records.get(index);
-		throw new IndexOutOfBoundsException(""+index);
-	}
 	
 	public String toString() {
 		String r="";
@@ -82,4 +63,19 @@ public class Page implements Serializable{
 		}
 		return r;
 	}
+	public void save() throws IOException
+	{
+		File file = new File(directory);
+		if(!file.exists())
+			file.delete();
+		file.createNewFile();
+		ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(file));
+		stream.writeObject(this);
+		stream.close();
+	}
+
+	public Vector<Record> getRecords() {
+		return records;
+	}
+
 }

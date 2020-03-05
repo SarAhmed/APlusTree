@@ -1,6 +1,5 @@
 package APlusTree;
 
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -12,35 +11,34 @@ import java.util.Hashtable;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-
 public class DBApp {
 
-	private static String mainDirectory = "";
-	private String dbDirectory="";
-	private File metadata;
+	private static String mainDir = "";
 	private Properties dbProps;
+	private String DataBaseDir = "";
+	private File metadata;
 	private String dataTypes[] = { "java.lang.Integer", "java.lang.String", "java.lang.Double", "java.lang.Boolean",
 			"java.util.Date", "java.awt.Polygon" };
 
 	public void createTable(String strTableName, String strClusteringKeyColumn,
 			Hashtable<String, String> htblColNameType) throws DBAppException, IOException {
-		File dir = new File(dbDirectory +"data/"+ strTableName+".class");
+		File dir = new File(DataBaseDir + "data/" + strTableName + ".class");
 		// TO DO
-		 if(dir.exists())
-		 throw new DBAppException("There exists a table with this name.");
+		if (dir.exists())
+			throw new DBAppException("A table with this name already exists on the disk!");
 
 		boolean validColType = checkColumnTypes(htblColNameType);
 		if (!validColType)
-			throw new DBAppException("Invalid column type.");
+			throw new DBAppException("The enterd column tyoe is invalid!");
 		try {
 			addToMetaData(strTableName, htblColNameType, strClusteringKeyColumn);
 		} catch (IOException e) {
-			throw new DBAppException("An error happened while creating the meta file!");
+			throw new DBAppException("While creating the meta file an unexpected error occured");
 		}
 		htblColNameType.put("TouchDate", "java.util.Date");
-		int maxTuplesPerPage = Integer.parseInt(dbProps.getProperty("MaximumRowsCountinPage"));
+		int MaximumRowsCountinPage = Integer.parseInt(dbProps.getProperty("MaximumRowsCountinPage"));
 		int nodeSize = Integer.parseInt(dbProps.getProperty("NodeSize"));
-		new Table(dbDirectory, strTableName, htblColNameType, strClusteringKeyColumn, maxTuplesPerPage,nodeSize);
+		new Table(DataBaseDir, strTableName, htblColNameType, strClusteringKeyColumn, MaximumRowsCountinPage, nodeSize);
 		System.out.println("Table is created successfully: " + strTableName);
 
 	}
@@ -59,13 +57,13 @@ public class DBApp {
 	}
 
 	public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws Exception {
-		Table t=getTable(strTableName);
+		Table t = getTable(strTableName);
 		t.deleteFromTable(htblColNameValue);
-		
+
 	}
 
 	private Table getTable(String strTableName) throws FileNotFoundException, IOException, ClassNotFoundException {
-		File tableFile = new File(dbDirectory  + "data/" + strTableName + ".class");
+		File tableFile = new File(DataBaseDir + "data/" + strTableName + ".class");
 		if (!tableFile.exists())
 			return null;
 		ObjectInputStream ois = new ObjectInputStream(new FileInputStream(tableFile));
@@ -76,23 +74,20 @@ public class DBApp {
 
 	public void init() throws IOException {
 
-		File dbDir = new File(dbDirectory = mainDirectory);
+		File dbDir = new File(DataBaseDir = mainDir);
 		dbDir.mkdirs();
 
-		String s="";
-		
-		new File(s=(dbDirectory + "config")).mkdirs();
-		//new File(s=(dbDirectory + "classes/APlusTree")).mkdirs();
-		
-		
+		String s = "";
+
+		new File(s = (DataBaseDir + "config")).mkdirs();
+
 		dbProps = new java.util.Properties();
-		FileInputStream fis= new FileInputStream("config/DBApp.config");
+		FileInputStream fis = new FileInputStream("config/DBApp.config");
 		dbProps.load(fis);
-		
-		
+
 		// initialize metadata file
-		new File(dbDirectory + "data").mkdirs();
-		this.metadata = new File(dbDirectory + "data/" + "/metadata.csv");
+		new File(DataBaseDir + "data").mkdirs();
+		this.metadata = new File(DataBaseDir + "data/" + "/metadata.csv");
 		if (this.metadata.createNewFile()) {
 			PrintWriter out = new PrintWriter(this.metadata);
 			out.println("Table Name, Column Name, Column Type, ClusteringKey, Indexed");
@@ -129,11 +124,12 @@ public class DBApp {
 		pr.close();
 	}
 
-public String displayTable(String tableName) throws FileNotFoundException, ClassNotFoundException, IOException {
-	Table t= (Table)this.getTable(tableName);
-	return t.toString();
-}
-public static void main(String[] args) throws Exception {
+	public String displayTable(String tableName) throws FileNotFoundException, ClassNotFoundException, IOException {
+		Table t = (Table) this.getTable(tableName);
+		return t.toString();
+	}
+
+	public static void main(String[] args) throws Exception {
 
 		DBApp dbapp = new DBApp();
 		dbapp.init();

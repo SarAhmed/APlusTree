@@ -20,75 +20,67 @@ import java.util.Map.Entry;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
-
 public class Table implements Serializable {
 	private static final long serialVersionUID = 1L;
 
-	private int maxTuplesPerPage, curPageIndex, numOfColumns,NodeSize;
-	private String path, tableName, tableHeader, clusteringKey;
-	private Hashtable<String, String> colTypes;
+	private int MaximumRowsCountinPage, curIdx, NodeSize;
+	private String tableName, directory, tableHeader, clusteringKey;
+	private Hashtable<String, String> columnTypes;
 	private Vector<String> pagesDirectory;
 
 	public Table(String path, String strTableName, Hashtable<String, String> htblColNameType, String strKeyColName,
-			int maxTuplesPerPage,int nodeSize) throws IOException {
-		this.NodeSize=nodeSize;
-		this.path = path  + "data/";
+			int MaximumRowsCountinPage, int nodeSize) throws IOException {
+		this.directory = path + "data/";
+		this.curIdx = -1;
+		this.columnTypes = htblColNameType;
+		this.NodeSize = nodeSize;
 		this.tableName = strTableName;
 		this.clusteringKey = strKeyColName;
-		this.colTypes = htblColNameType;
-		this.maxTuplesPerPage = maxTuplesPerPage;
-		this.curPageIndex = -1;
-		this.numOfColumns = 0;
 		this.pagesDirectory = new Vector<String>();
+		this.MaximumRowsCountinPage = MaximumRowsCountinPage;
 		createDirectory();
-		// createPage();
 		initializeColumnsHeader();
-		saveTable();
+		save();
 	}
 
 	private void initializeColumnsHeader() throws IOException {
 		tableHeader = "";
-		ArrayList<String[]> colInfo=getColInfo();
-		for(int i=0;i<colInfo.size();i++) {
-			tableHeader+=colInfo.get(i)[1]+", ";
+		ArrayList<String[]> colInfo = getColInfo();
+		for (int i = 0; i < colInfo.size(); i++) {
+			tableHeader += colInfo.get(i)[1] + ", ";
 		}
 
-		tableHeader+="Touch Date";
-		
-//		for (Entry<String, String> entry : colTypes.entrySet()) {
-//			numOfColumns++;
-//			tableHeader += entry.getKey() + ", ";
-//		}
+		tableHeader += "Touch Date";
+
 	}
 
 	private void createDirectory() {
-		File tableDir = new File(path);
+		File tableDir = new File(directory);
 		tableDir.mkdir();
 	}
 
 	private Page createPage() throws IOException {
-		curPageIndex++;
-		Page p = new Page(maxTuplesPerPage, path + tableName + "_" + curPageIndex + ".class");
-		pagesDirectory.add(path + tableName + "_" + curPageIndex + ".class");
-		saveTable();
-		return p;
+		curIdx++;
+		Page page = new Page(MaximumRowsCountinPage, directory + tableName + "_" + curIdx + ".class");
+		pagesDirectory.add(directory + tableName + "_" + curIdx + ".class");
+		save();
+		return page;
 
 	}
 
-
-	private void saveTable() throws IOException {
-		File f = new File(path + tableName + ".class");
-		if (f.exists())
-			f.delete();
-		f.createNewFile();
-		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(f));
-		oos.writeObject(this);
-		oos.close();
+	private void save() throws IOException {
+		File file = new File(directory + tableName + ".class");
+		if (file.exists())
+			file.delete();
+		file.createNewFile();
+		ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(file));
+		stream.writeObject(this);
+		stream.close();
 	}
 
 	private int[] search(Hashtable<String, Object> htblColNameValue) throws Exception {
 		if (checkValidInput(htblColNameValue)) {
-			String type = this.colTypes.get(this.getClusteringKey()).trim();
+			String type = this.columnTypes.get(this.getClusteringKey()).trim();
 
 			Object value = htblColNameValue.get(this.getClusteringKey());
 			String clusteringKey = getClusteringKey();
@@ -117,7 +109,7 @@ public class Table implements Serializable {
 						pageIdx = i;
 						recordIdx = p.size();
 						// if the last page is full i will create a new one
-						if (recordIdx == this.maxTuplesPerPage) {
+						if (recordIdx == this.MaximumRowsCountinPage) {
 							pageIdx++;
 							recordIdx = 0;
 						}
@@ -137,7 +129,7 @@ public class Table implements Serializable {
 							recordIdx = p.size();
 
 							// if the page is full i will add it to the next one
-							if (recordIdx == this.maxTuplesPerPage) {
+							if (recordIdx == this.MaximumRowsCountinPage) {
 								pageIdx++;
 								recordIdx = 0;
 							}
@@ -174,30 +166,30 @@ public class Table implements Serializable {
 			return result;
 		}
 		// TO DO
-		 throw new DBAppException("invalid input format");
+		throw new DBAppException("invalid input format");
 	}
-	
+
 	public static String getDate() {
-		SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");  
-	    Date date = new Date();  
-	    return formatter.format(date);
+		SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+		Date date = new Date();
+		return formatter.format(date);
 	}
 
 	public boolean insertIntoTable(Hashtable<String, Object> htblColNameValue) throws Exception {
-		
+
 		// from here i will only make every Polygon as DBPolygon
-		ArrayList<String> polygonColumns=new ArrayList();
-		for(Entry<String,Object> e:htblColNameValue.entrySet()) {
-			if(e.getValue() instanceof Polygon) {
+		ArrayList<String> polygonColumns = new ArrayList();
+		for (Entry<String, Object> e : htblColNameValue.entrySet()) {
+			if (e.getValue() instanceof Polygon) {
 				polygonColumns.add(e.getKey());
 			}
 		}
-		
-		for( String s:polygonColumns) {
-			Polygon p=(Polygon)htblColNameValue.get(s);
+
+		for (String s : polygonColumns) {
+			Polygon p = (Polygon) htblColNameValue.get(s);
 			htblColNameValue.put(s, new DBPolygon(p));
 		}
-		
+
 		// this is the end of making every polygon as DBPolygon
 		int[] location = search(htblColNameValue);
 		if (location == null)
@@ -208,28 +200,28 @@ public class Table implements Serializable {
 		ArrayList<String[]> metaInfo = this.getColInfo();
 		for (int i = 0; i < metaInfo.size(); i++) {
 			Object value = htblColNameValue.getOrDefault(metaInfo.get(i)[1], null);
-			//updated
-			if(value!=null && value instanceof Polygon ) {
-				value=new DBPolygon((Polygon)value);
+			// updated
+			if (value != null && value instanceof Polygon) {
+				value = new DBPolygon((Polygon) value);
 			}
-			r.addValue(value);
+			r.add(value);
 		}
-		// TO DO replace this with htblColName.add("touch date",getDate()) at the beginning if it's inserted in metadata
-			r.addValue(getDate());
-		
-		
+		// TO DO replace this with htblColName.add("touch date",getDate()) at the
+		// beginning if it's inserted in metadata
+		r.add(getDate());
+
 		int pageDirectorySize = pagesDirectory.size();
 		boolean inserted = false;
 
 		for (int i = pageIdx; i < pageDirectorySize && !inserted; i++) {
 			Page p = deserialize(pagesDirectory.get(i));
 
-			if (!(inserted = p.addRecord(r, recordIdx))) {
+			if (!(inserted = p.add(r, recordIdx))) {
 
-				Record removedRecord = p.removeRecord(p.size() - 1);
+				Record removedRecord = p.remove(p.size() - 1);
 
 				// this for tracing only replace it without if (only addRecord())
-				if (!p.addRecord(r, recordIdx)) {
+				if (!p.add(r, recordIdx)) {
 					// TO DO remove this case
 					throw new Exception("feh haga 3'lt");
 				}
@@ -243,10 +235,10 @@ public class Table implements Serializable {
 
 		if (!inserted) {
 			Page newPage = createPage();
-			newPage.addRecord(r, recordIdx);
+			newPage.add(r, recordIdx);
 			inserted = true;
 		}
-		saveTable();
+		save();
 		if (!inserted)
 			throw new Exception("enta matst72sh t3lem ");
 		return inserted;
@@ -261,10 +253,13 @@ public class Table implements Serializable {
 		} else if (type.equals("java.lang.Double")) {
 			c = (Double) value;
 		} else if (type.equals("java.awt.Polygon")) {
-			c=(DBPolygon)value;
-		
-		}else if(type.equals("java.util.Date")) {
-			c=(java.util.Date)value;
+			c = (DBPolygon) value;
+
+		} else if (type.equals("java.util.Date")) {
+			c = (java.util.Date) value;
+		}else if(type.equals("java.lang.Boolean")) {
+			c = (java.lang.Boolean) value;
+
 		}
 		return c;
 
@@ -278,25 +273,26 @@ public class Table implements Serializable {
 		}
 		return -1;
 	}
+
 	@SuppressWarnings("deprecation")
 	private Date strToDateParser(String s) {
-		StringTokenizer st= new StringTokenizer(s,"- ");
-		int year=Integer.parseInt(st.nextToken());
-		int month=Integer.parseInt(st.nextToken());
-		int day=Integer.parseInt(st.nextToken());
+		StringTokenizer st = new StringTokenizer(s, "- ");
+		int year = Integer.parseInt(st.nextToken());
+		int month = Integer.parseInt(st.nextToken());
+		int day = Integer.parseInt(st.nextToken());
 		Calendar cal = Calendar.getInstance();
 		cal.set(Calendar.YEAR, year);
-		cal.set(Calendar.MONTH, month-1);
+		cal.set(Calendar.MONTH, month - 1);
 		cal.set(Calendar.DAY_OF_MONTH, day);
 		Date dateRepresentation = cal.getTime();
-	
+
 		return dateRepresentation;
 	}
 
 	public ArrayList<String[]> getColInfo() throws IOException {
 
 		/* Double dots to get back a dir to be able to acces meta data file */
-		FileReader fileReader = new FileReader(path + "../data/" + "/metadata.csv");
+		FileReader fileReader = new FileReader(directory + "../data/" + "/metadata.csv");
 
 		BufferedReader bufferedReader = new BufferedReader(fileReader);
 		String line = "";
@@ -317,21 +313,20 @@ public class Table implements Serializable {
 	public boolean updateTable(String strClusteringKey, Hashtable<String, Object> htblColNameValue)
 			throws DBAppException, IOException {
 		// from here i will only make every Polygon as DBPolygon
-		ArrayList<String> polygonColumns=new ArrayList();
-		for(Entry<String,Object> e:htblColNameValue.entrySet()) {
-			if(e.getValue() instanceof Polygon) {
+		ArrayList<String> polygonColumns = new ArrayList();
+		for (Entry<String, Object> e : htblColNameValue.entrySet()) {
+			if (e.getValue() instanceof Polygon) {
 				polygonColumns.add(e.getKey());
 			}
 		}
-		
-		for( String s:polygonColumns) {
-			Polygon p=(Polygon)htblColNameValue.get(s);
+
+		for (String s : polygonColumns) {
+			Polygon p = (Polygon) htblColNameValue.get(s);
 			htblColNameValue.put(s, new DBPolygon(p));
 		}
-		
+
 		// this is the end of making every polygon as DBPolygon
-	
-		
+
 		if (!checkValidInput(htblColNameValue)) {
 			throw new DBAppException("Invalid Input Format");
 		}
@@ -349,10 +344,13 @@ public class Table implements Serializable {
 					searchKey = strClusteringKey;
 				} else if (type.equals("java.lang.Double")) {
 					searchKey = Double.parseDouble(strClusteringKey);
-				}else if(type.equals("java.awt.Polygon")) {
-					searchKey=new DBPolygon(strClusteringKey);
-				}else if (type.equals("java.util.Date")) {
-					searchKey=strToDateParser(strClusteringKey);
+				} else if (type.equals("java.awt.Polygon")) {
+					searchKey = new DBPolygon(strClusteringKey);
+				} else if (type.equals("java.util.Date")) {
+					searchKey = strToDateParser(strClusteringKey);
+				} else if (type.equals("java.lang.Boolean")) {
+					searchKey = Boolean.parseBoolean(strClusteringKey);
+
 				}
 				break;
 			}
@@ -372,14 +370,15 @@ public class Table implements Serializable {
 						Object value = entry.getValue();
 						int colIdx = getColIdx(colName);
 
-						currRecord.updateValue(colIdx, value);
+						currRecord.update(colIdx, value);
 						updated = true;
 					}
-					//TO DO if touchDate is in MetaData => add to htblColNames.add(String touchDate,getDate) at the begning of the method
-					if(updated) {
-						currRecord.updateValue(currRecord.getValues().size()-1, getDate());
+					// TO DO if touchDate is in MetaData => add to htblColNames.add(String
+					// touchDate,getDate) at the begning of the method
+					if (updated) {
+						currRecord.update(currRecord.getValues().size() - 1, getDate());
 					}
-					
+
 				} else if (currKey.compareTo(searchKey) > 0) {
 					stop = true;
 					break;
@@ -395,63 +394,54 @@ public class Table implements Serializable {
 
 	public void deleteFromTable(Hashtable<String, Object> htblColNameValue) throws Exception {
 		getColInfo();
-		
+
 		// from here i will only make every Polygon as DBPolygon
-		ArrayList<String> polygonColumns=new ArrayList();
-		for(Entry<String,Object> e:htblColNameValue.entrySet()) {
-			if(e.getValue() instanceof Polygon) {
+		ArrayList<String> polygonColumns = new ArrayList();
+		for (Entry<String, Object> e : htblColNameValue.entrySet()) {
+			if (e.getValue() instanceof Polygon) {
 				polygonColumns.add(e.getKey());
 			}
 		}
-		
-		for( String s:polygonColumns) {
-			Polygon p=(Polygon)htblColNameValue.get(s);
+
+		for (String s : polygonColumns) {
+			Polygon p = (Polygon) htblColNameValue.get(s);
 			htblColNameValue.put(s, new DBPolygon(p));
 		}
-		
+
 		// this is the end of making every polygon as DBPolygon
-	
-		
-		if(!checkValidInput(htblColNameValue)) {
+
+		if (!checkValidInput(htblColNameValue)) {
 			throw new Exception("invalid data types");
 		}
-		
-		for(int i=0;i<pagesDirectory.size();i++) {
-			Page p =deserialize(pagesDirectory.get(i));
-			for(int k=0;k<p.size();k++) {
-				Record currRecord=p.get(k);
-				if(matchRecord(currRecord, htblColNameValue)) {
-					//System.out.println("there is a match");
-					p.removeRecord(k--);
+
+		for (int i = 0; i < pagesDirectory.size(); i++) {
+			Page p = deserialize(pagesDirectory.get(i));
+			for (int k = 0; k < p.size(); k++) {
+				Record currRecord = p.get(k);
+				if (matchRecord(currRecord, htblColNameValue)) {
+					// System.out.println("there is a match");
+					p.remove(k--);
 				}
 			}
-			if(p.size()==0) {
-				File f= new File(pagesDirectory.get(i));
-				if(!f.delete()) {
+			if (p.size() == 0) {
+				File f = new File(pagesDirectory.get(i));
+				if (!f.delete()) {
 					throw new Exception("there is an error while deleting");
 				}
 				pagesDirectory.remove(i--);
-				
+
 			}
 		}
-		
-		this.saveTable();
+
+		this.save();
 	}
 
 	public boolean matchRecord(Record record, Hashtable<String, Object> htblColNameValue) {
 		String[] header = tableHeader.split(", ");
-		for (int i = 0; i < header.length-1; i++) {
+		for (int i = 0; i < header.length - 1; i++) {
 			if (htblColNameValue.containsKey(header[i].trim())) {
 				Vector<Object> r = record.getValues();
-				// put in mind whether it compares using refrence or value
-//				System.out.println("header : "+header[i].trim());
-//				System.out.println("header value : "+htblColNameValue.get(header[i].trim()));
-//				System.out.println("record value : "+r.get(i));
-//				if(i==0) {
-//					System.out.println("i m here");
-//					
-//				}
-//				System.out.println(htblColNameValue.get(header[i].trim()).equals(r.get(i)));
+				
 				if (!htblColNameValue.get(header[i].trim()).equals(r.get(i)))
 					return false;
 			}
@@ -488,17 +478,15 @@ public class Table implements Serializable {
 			String colName = entry.getKey();
 			Object value = entry.getValue();
 			/* Check that a column with this name already exists */
-			if (!this.colTypes.containsKey(colName))
-				{
-			//	System.out.println("the column name doesn't exist");
+			if (!this.columnTypes.containsKey(colName)) {
+				// System.out.println("the column name doesn't exist");
 				return false;
-				}
+			}
 			/* Check for valid column type */
-			if (!checkType(value, this.colTypes.get(colName)))
-				{
-				//System.out.println("the col type is invalid");
+			if (!checkType(value, this.columnTypes.get(colName))) {
+				// System.out.println("the col type is invalid");
 				return false;
-				}
+			}
 
 		}
 		return true;
@@ -506,9 +494,8 @@ public class Table implements Serializable {
 
 	private boolean checkType(Object value, String type) {
 		String actualType = (value.getClass().toString().split(" "))[1].trim();
-		//System.out.println("actual type is "+actualType);
-		
-		if(actualType.equals("APlusTree.DBPolygon")&&type.equals("java.awt.Polygon")) {
+
+		if (actualType.equals("APlusTree.DBPolygon") && type.equals("java.awt.Polygon")) {
 			return true;
 		}
 		return actualType.equals(type);
@@ -523,8 +510,8 @@ public class Table implements Serializable {
 		String r = "";
 		r += tableHeader;
 		for (int i = 0; i < pagesDirectory.size(); i++) {
-			String tmpS=pagesDirectory.get(i);
-			Page tmp =deserialize(tmpS);
+			String tmpS = pagesDirectory.get(i);
+			Page tmp = deserialize(tmpS);
 			r += " page number " + i + "\n " + tmp.toString();
 
 		}

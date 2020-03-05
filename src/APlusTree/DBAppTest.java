@@ -11,8 +11,7 @@ public class DBAppTest {
 public static void main(String[] args) throws Exception {
 		DBApp db = new DBApp();
 		testInsert(db);
-		//testUpdate(db);
-		//testDelete(db);
+	
 		System.out.println(db.displayTable("Student"));
 	}
 
@@ -23,25 +22,25 @@ public static void main(String[] args) throws Exception {
 		//1.Student Table
 		String tableName = "Student";
 		Hashtable<String, String> htblColNameType = new Hashtable<String, String>();
-//		htblColNameType.put("id", "java.lang.Integer");
-//		htblColNameType.put("name", "java.lang.String");
-//		htblColNameType.put("gpa", "java.lang.Integer");
-		htblColNameType.put("date", "java.util.Date");
+		htblColNameType.put("id", "java.lang.Integer");
+		htblColNameType.put("name", "java.lang.String");
+		htblColNameType.put("gpa", "java.lang.Integer");
+		htblColNameType.put("Bola", "java.lang.Boolean");
 		htblColNameType.put("poly", "java.awt.Polygon");
 		
-		db.createTable(tableName,"date",htblColNameType);
+		db.createTable(tableName,"Bola",htblColNameType);
 		Random rnd= new Random();
 		
 		for(int i = 0 ; i < 52 ; i++) {
 			Hashtable<String, Object> htblColNameValue = new Hashtable();
 			int id= rnd.nextInt(10);
-//			htblColNameValue.put("id", new Integer(id));
-//			htblColNameValue.put("name", new String("Student"+(id)));
-//			htblColNameValue.put("gpa", new Integer(rnd.nextInt(100)));
-			int year= 2000;
-			int month= 1+rnd.nextInt(12);
-			int day= 1+rnd.nextInt(29);
-			htblColNameValue.put("date",new Date(year,month,day));
+			htblColNameValue.put("id", new Integer(id));
+			htblColNameValue.put("name", new String("Student"+(id)));
+			htblColNameValue.put("gpa", new Integer(rnd.nextInt(100)));
+			boolean xa=i%2==0;
+			htblColNameValue.put("Bola", new Boolean(xa));
+
+			
 			int n=3+rnd.nextInt(5);
 			int[]x =new int[n];
 			int[] y=new int[n];
@@ -51,6 +50,7 @@ public static void main(String[] args) throws Exception {
 			}
 			htblColNameValue.put("poly",new Polygon(x,y,n));
 			db.insertIntoTable("Student", htblColNameValue);
+			
 		}
 			
 		
