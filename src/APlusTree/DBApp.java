@@ -11,8 +11,7 @@ import java.util.Hashtable;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-public class DBApp {
-
+public class DBApp { 
 	private static String mainDir = "";
 	private Properties dbProps;
 	private String DataBaseDir = "";
