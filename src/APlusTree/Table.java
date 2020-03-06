@@ -199,7 +199,10 @@ public class Table implements Serializable {
 		Record r = new Record();
 		ArrayList<String[]> metaInfo = this.getColInfo();
 		for (int i = 0; i < metaInfo.size(); i++) {
-			Object value = htblColNameValue.getOrDefault(metaInfo.get(i)[1], null);
+			if(!htblColNameValue.containsKey(metaInfo.get(i)[1])) {
+				throw new DBAppException("There is a missing Column or you entered a null value.");
+			}
+			Object value = htblColNameValue.get(metaInfo.get(i)[1]);
 			// updated
 			if (value != null && value instanceof Polygon) {
 				value = new DBPolygon((Polygon) value);

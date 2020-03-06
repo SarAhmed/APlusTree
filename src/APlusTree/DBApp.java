@@ -44,6 +44,8 @@ public class DBApp {
 
 	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws Exception {
 		Table t = getTable(strTableName);
+		if(t==null)
+			throw new DBAppException("The Table you are trying to Insert to does not exist.");
 		t.insertIntoTable(htblColNameValue);
 
 	}
@@ -51,12 +53,16 @@ public class DBApp {
 	public void updateTable(String strTableName, String strClusteringKey, Hashtable<String, Object> htblColNameValue)
 			throws DBAppException, FileNotFoundException, ClassNotFoundException, IOException {
 		Table t = getTable(strTableName);
+		if(t==null)
+			throw new DBAppException("The Table you are trying to update does not exist.");
 		t.updateTable(strClusteringKey, htblColNameValue);
 
 	}
 
 	public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws Exception {
 		Table t = getTable(strTableName);
+		if(t==null)
+			throw new DBAppException("The Table you are trying to delete from does not exist.");
 		t.deleteFromTable(htblColNameValue);
 
 	}
