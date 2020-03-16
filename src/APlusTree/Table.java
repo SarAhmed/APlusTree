@@ -169,6 +169,108 @@ public class Table implements Serializable {
 		throw new DBAppException("invalid input format");
 	}
 
+	private int[] BinarySearch(Hashtable<String, Object> htblColNameValue) throws Exception {
+		if (checkValidInput(htblColNameValue)) {
+			String type = this.columnTypes.get(this.getClusteringKey()).trim();
+
+			Object value = htblColNameValue.get(this.getClusteringKey());
+			String clusteringKey = getClusteringKey();
+
+			Comparable inputKey = getComparable(value, type);
+			// TO DO use DBException not Exception
+			if (inputKey == null)
+				throw new DBAppException(" the type of key is not comparable");
+
+			int pageIdx = -1;
+			int recordIdx = -1;
+			int clusteredIdx = getColIdx(clusteringKey);
+			all: for (int i = 0; i < pagesDirectory.size(); i++) {
+				Page p = deserialize(pagesDirectory.get(i));
+				Record lastRecord = p.getRecords().get(p.size() - 1);
+
+				Comparable recordKey = getComparable(lastRecord.get(clusteredIdx), type);
+
+				if (recordKey.compareTo(inputKey) < 0) {
+					// 2 cases
+
+					// A. you don't have next page
+
+					if (i == pagesDirectory.size() - 1) {
+
+						pageIdx = i;
+						recordIdx = p.size();
+						// if the last page is full i will create a new one
+						if (recordIdx == this.MaximumRowsCountinPage) {
+							pageIdx++;
+							recordIdx = 0;
+						}
+
+						break all;
+
+					}
+					// B. next page start element is greater than me
+					else {
+						Page nxtPage = deserialize(pagesDirectory.get(i + 1));
+
+						Record firstnxtPageRecord = nxtPage.getRecords().get(0);
+						Comparable firstnxtPageRecordKey = getComparable(firstnxtPageRecord.get(clusteredIdx), type);
+
+						if (firstnxtPageRecordKey.compareTo(inputKey) >= 0) {
+							pageIdx = i;
+							recordIdx = p.size();
+
+							// if the page is full i will add it to the next one
+							if (recordIdx == this.MaximumRowsCountinPage) {
+								pageIdx++;
+								recordIdx = 0;
+							}
+
+							break all;
+						}
+
+					}
+				} else {
+					// if the last record is greater than me so i will iterate the whole page to
+					// find the location
+					Vector<Record> pageRecords = p.getRecords();
+					pageIdx = i;
+					recordIdx = BSVector(pageRecords, inputKey, clusteredIdx, type);
+
+					break all;
+
+				}
+			}
+
+			if (pageIdx == -1) {
+				pageIdx = 0;
+				recordIdx = 0;
+			}
+			int[] result = new int[2];
+			result[0] = pageIdx;
+			result[1] = recordIdx;
+			return result;
+		}
+		// TO DO
+		throw new DBAppException("invalid input format");
+	}
+
+	static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String type) {
+		int lo = 0;
+		int hi = arr.size();
+		while (hi - lo > 0) {
+			int mid = hi + lo >> 1;
+			Record currRecord = arr.get(mid);
+			Comparable currKey = getComparable(currRecord.get(clusteredIdx), type);
+
+			if (currKey.compareTo(val) >= 0) {
+				hi = mid;
+			} else {
+				lo = mid + 1;
+			}
+		}
+		return hi;
+	}
+
 	public static String getDate() {
 		SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 		Date date = new Date();
@@ -191,7 +293,7 @@ public class Table implements Serializable {
 		}
 
 		// this is the end of making every polygon as DBPolygon
-		int[] location = search(htblColNameValue);
+		int[] location = BinarySearch(htblColNameValue);
 		if (location == null)
 			throw new DBAppException("Invalid record format");
 		int pageIdx = location[0];
@@ -199,7 +301,7 @@ public class Table implements Serializable {
 		Record r = new Record();
 		ArrayList<String[]> metaInfo = this.getColInfo();
 		for (int i = 0; i < metaInfo.size(); i++) {
-			if(!htblColNameValue.containsKey(metaInfo.get(i)[1])) {
+			if (!htblColNameValue.containsKey(metaInfo.get(i)[1])) {
 				throw new DBAppException("There is a missing Column or you entered a null value.");
 			}
 			Object value = htblColNameValue.get(metaInfo.get(i)[1]);
@@ -260,7 +362,7 @@ public class Table implements Serializable {
 
 		} else if (type.equals("java.util.Date")) {
 			c = (java.util.Date) value;
-		}else if(type.equals("java.lang.Boolean")) {
+		} else if (type.equals("java.lang.Boolean")) {
 			c = (java.lang.Boolean) value;
 
 		}
@@ -395,9 +497,9 @@ public class Table implements Serializable {
 		return true;
 	}
 
-	public void deleteFromTable(Hashtable<String, Object> htblColNameValue) throws Exception {
-		getColInfo();
-
+	
+public boolean updateTableBS(String strClusteringKey, Hashtable<String, Object> htblColNameValue)
+			throws DBAppException, IOException {
 		// from here i will only make every Polygon as DBPolygon
 		ArrayList<String> polygonColumns = new ArrayList();
 		for (Entry<String, Object> e : htblColNameValue.entrySet()) {
@@ -414,26 +516,177 @@ public class Table implements Serializable {
 		// this is the end of making every polygon as DBPolygon
 
 		if (!checkValidInput(htblColNameValue)) {
+			throw new DBAppException("Invalid Input Format");
+		}
+
+		int keyIdx = this.getColIdx(getClusteringKey());
+		ArrayList<String[]> tableInfo = this.getColInfo();
+		Comparable searchKey = null;
+		String type = "";
+		for (int i = 0; i < tableInfo.size(); i++) {
+			if (tableInfo.get(i)[3].trim().equals("True")) {
+				type = tableInfo.get(i)[2].trim();
+				if (type.equals("java.lang.Integer")) {
+					searchKey = Integer.parseInt(strClusteringKey);
+				} else if (type.equals("java.lang.String")) {
+					searchKey = strClusteringKey;
+				} else if (type.equals("java.lang.Double")) {
+					searchKey = Double.parseDouble(strClusteringKey);
+				} else if (type.equals("java.awt.Polygon")) {
+					searchKey = new DBPolygon(strClusteringKey);
+				} else if (type.equals("java.util.Date")) {
+					searchKey = strToDateParser(strClusteringKey);
+				} else if (type.equals("java.lang.Boolean")) {
+					searchKey = Boolean.parseBoolean(strClusteringKey);
+
+				}
+				break;
+			}
+		}
+
+		boolean stop = false;
+		boolean binaryUsed = false;
+		for (int i = 0; i < pagesDirectory.size() && !stop; i++) {
+			Page p = deserialize(pagesDirectory.get(i));
+			Record lastRecord = p.get(p.size() - 1);
+			Comparable lastRecordKey = getComparable(lastRecord.get(keyIdx), type);
+
+			if (lastRecordKey.compareTo(searchKey) < 0)
+				continue;
+
+			Vector<Record> pageRecords = p.getRecords();
+			int updateIdx = 0;
+			if (!binaryUsed) {
+				updateIdx = BSVector(pageRecords, searchKey, keyIdx, type);
+				binaryUsed = true;
+			}
+
+			boolean updated = false;
+
+			// let pageidx 2li
+			// let BSidx
+			for (int k = updateIdx; k < p.size(); k++) {
+				Record currRecord = p.get(k);
+
+				Comparable currKey = getComparable(currRecord.get(keyIdx), type);
+				if (currKey.compareTo(searchKey) == 0) {
+
+					for (Entry<String, Object> entry : htblColNameValue.entrySet()) {
+						String colName = entry.getKey();
+						Object value = entry.getValue();
+						int colIdx = getColIdx(colName);
+
+						currRecord.update(colIdx, value);
+						updated = true;
+					}
+					// TO DO if touchDate is in MetaData => add to htblColNames.add(String
+					// touchDate , getDate ) at the begning of the method
+					if (updated) {
+						currRecord.update(currRecord.getValues().size() - 1, getDate());
+					}
+
+				} else if (currKey.compareTo(searchKey) > 0) {
+					stop = true;
+					break;
+				}
+			}
+			if (updated) {
+				p.save();
+			}
+		}
+
+		return true;
+	}
+
+	
+public void deleteFromTable(Hashtable<String, Object> htblColNameValue) throws Exception {
+		getColInfo();
+		
+		ArrayList<String> polygonColumns = new ArrayList();
+		for (Entry<String, Object> e : htblColNameValue.entrySet()) {
+			if (e.getValue() instanceof Polygon) {
+				polygonColumns.add(e.getKey());
+			}
+		}
+
+		for (String s : polygonColumns) {
+			Polygon p = (Polygon) htblColNameValue.get(s);
+			htblColNameValue.put(s, new DBPolygon(p));
+		}
+
+		String clusteringKey = getClusteringKey();
+		
+		if (!checkValidInput(htblColNameValue)) {
 			throw new Exception("invalid data types");
 		}
 
-		for (int i = 0; i < pagesDirectory.size(); i++) {
-			Page p = deserialize(pagesDirectory.get(i));
-			for (int k = 0; k < p.size(); k++) {
-				Record currRecord = p.get(k);
-				if (matchRecord(currRecord, htblColNameValue)) {
-					// System.out.println("there is a match");
-					p.remove(k--);
-				}
-			}
-			if (p.size() == 0) {
-				File f = new File(pagesDirectory.get(i));
-				if (!f.delete()) {
-					throw new Exception("there is an error while deleting");
-				}
-				pagesDirectory.remove(i--);
+		if (!htblColNameValue.containsKey(clusteringKey)) {
+			// from here i will only make every Polygon as DBPolygon
+						// this is the end of making every polygon as DBPolygon
 
+		
+			for (int i = 0; i < pagesDirectory.size(); i++) {
+				Page p = deserialize(pagesDirectory.get(i));
+				for (int k = 0; k < p.size(); k++) {
+					Record currRecord = p.get(k);
+					if (matchRecord(currRecord, htblColNameValue)) {
+						// System.out.println("there is a match");
+						p.remove(k--);
+					}
+				}
+				if (p.size() == 0) {
+					File f = new File(pagesDirectory.get(i));
+					if (!f.delete()) {
+						throw new Exception("there is an error while deleting");
+					}
+					pagesDirectory.remove(i--);
+
+				}
 			}
+		}else {
+			System.out.println("******************Da5alt 2l else part***********************");
+			int clusteredIdx=getColIdx(clusteringKey);
+			String type = this.columnTypes.get(this.getClusteringKey()).trim(); 
+			Comparable searchKey=getComparable(htblColNameValue.get(this.getClusteringKey()), type);
+			boolean binaryUsed=false;
+			for(int i=0;i<pagesDirectory.size();i++) {
+				Page p=deserialize(pagesDirectory.get(i));
+				Record lastRecord=p.get(p.size()-1);
+				Comparable lastRecordKey=getComparable(lastRecord.get(clusteredIdx), type);
+				
+				if (lastRecordKey.compareTo(searchKey) < 0)
+					continue;
+				
+				Vector<Record> pageRecords= p.getRecords();
+				int deleteIdx = 0;
+				
+				if (!binaryUsed) {
+					deleteIdx = BSVector(pageRecords, searchKey, clusteredIdx, type);
+					binaryUsed = true;
+				}
+				
+				for (int k = deleteIdx; k < p.size(); k++) {
+					Record currRecord = p.get(k);
+					if (matchRecord(currRecord, htblColNameValue)) {
+						// System.out.println("there is a match");
+						p.remove(k--);
+					}
+				}
+				if (p.size() == 0) {
+					File f = new File(pagesDirectory.get(i));
+					if (!f.delete()) {
+						throw new Exception("there is an error while deleting");
+					}
+					pagesDirectory.remove(i--);
+
+				}
+
+				
+				
+				
+				
+			}
+			
 		}
 
 		this.save();
@@ -444,7 +697,7 @@ public class Table implements Serializable {
 		for (int i = 0; i < header.length - 1; i++) {
 			if (htblColNameValue.containsKey(header[i].trim())) {
 				Vector<Object> r = record.getValues();
-				
+
 				if (!htblColNameValue.get(header[i].trim()).equals(r.get(i)))
 					return false;
 			}

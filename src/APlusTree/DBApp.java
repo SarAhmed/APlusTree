@@ -55,7 +55,7 @@ public class DBApp {
 		Table t = getTable(strTableName);
 		if(t==null)
 			throw new DBAppException("The Table you are trying to update does not exist.");
-		t.updateTable(strClusteringKey, htblColNameValue);
+		t.updateTableBS(strClusteringKey, htblColNameValue);
 
 	}
 
