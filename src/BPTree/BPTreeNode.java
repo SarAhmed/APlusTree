@@ -100,6 +100,12 @@ public abstract class BPTreeNode<T extends Comparable<T>> implements Serializabl
 	public abstract PushUp<T> insert(T key, Ref recordReference, BPTreeInnerNode<T> parent, int ptr);
 	
 	public abstract Vector<Ref> search(T key);
+	public abstract Vector<Ref> searchGreaterThan(T key);
+	public abstract Vector<Ref> searchSmallerThan(Comparable minimumKey, T key);
+	public abstract Vector<Ref> searchGreaterThanOrEqual(T key);
+	public abstract Vector<Ref> searchSmallerThanOrEqual(Comparable minimumKey, T key);
+	public abstract Vector<Ref> notEqual(Comparable minimumKey, T key);
+
 	public abstract boolean containsKey(T key); //sarah
 	public abstract void addDuplicateKey(T key, Ref recordReference); //sarah
 

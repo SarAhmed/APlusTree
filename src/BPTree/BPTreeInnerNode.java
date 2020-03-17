@@ -308,6 +308,27 @@ public class BPTreeInnerNode<T extends Comparable<T>> extends BPTreeNode<T> impl
 	public Vector<Ref> search(T key) {
 		return children[findIndex(key)].search(key);
 	}
+	@Override
+	public Vector<Ref> searchGreaterThan(T key) {
+		return children[findIndex(key)].searchGreaterThan(key);
+	}
+	@Override
+	public Vector<Ref> searchSmallerThan(Comparable minKey, T key) {
+		return children[findIndex((T)minKey)].searchSmallerThan(minKey,key);
+	}
+	@Override
+	public Vector<Ref> searchGreaterThanOrEqual(T key) {
+		return children[findIndex(key)].searchGreaterThanOrEqual(key);
+	}
+	@Override
+	public Vector<Ref> searchSmallerThanOrEqual(Comparable minKey,T key) {
+		return children[findIndex((T)minKey)].searchSmallerThanOrEqual(minKey,key);
+	}
+	@Override
+	public Vector<Ref> notEqual(Comparable minKey,T key) {
+		return children[findIndex((T)minKey)].notEqual(minKey,key);
+	}
+	
 
 	@Override
 

@@ -183,6 +183,77 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 		return null;
 	}
 
+	public Vector<Ref> searchGreaterThan(T key) {
+		Vector<Ref> result = new Vector<Ref>();
+
+		for (int i = 0; i < numberOfKeys; ++i) {
+			if (this.getKey(i).compareTo(key) > 0)
+				result.addAll(this.getRecord(i));
+		}
+		if(this.next!=null) {
+			result.addAll(this.next.searchGreaterThan(key));
+		}
+		return result;
+	}
+	public Vector<Ref> searchGreaterThanOrEqual(T key) {
+		Vector<Ref> result = new Vector<Ref>();
+
+		for (int i = 0; i < numberOfKeys; ++i) {
+			if (this.getKey(i).compareTo(key) >= 0)
+				result.addAll(this.getRecord(i));
+		}
+		if(this.next!=null) {
+			result.addAll(this.next.searchGreaterThanOrEqual(key));
+		}
+		return result;
+	}
+	public Vector<Ref> searchSmallerThan(Comparable minKey,T key) {
+		Vector<Ref> result = new Vector<Ref>();
+
+		for (int i = 0; i < numberOfKeys; ++i) {
+			if (this.getKey(i).compareTo(key) >= 0)
+				return result;
+			else {
+				result.addAll(this.getRecord(i));
+			}
+		}
+		if(this.next!=null) {
+			result.addAll(this.next.searchSmallerThan(minKey, key));
+		}
+		return result;
+	}
+	public Vector<Ref> searchSmallerThanOrEqual(Comparable minKey,T key) {
+		Vector<Ref> result = new Vector<Ref>();
+
+		for (int i = 0; i < numberOfKeys; ++i) {
+			if (this.getKey(i).compareTo(key) > 0)
+				return result;
+			else {
+				result.addAll(this.getRecord(i));
+			}
+		}
+		if(this.next!=null) {
+			result.addAll(this.next.searchSmallerThanOrEqual(minKey, key));
+		}
+		return result;
+	}
+	public Vector<Ref> notEqual(Comparable minKey,T key) {
+		Vector<Ref> result = new Vector<Ref>();
+
+		for (int i = 0; i < numberOfKeys; ++i) {
+			if (this.getKey(i).compareTo(key) != 0) {
+				result.addAll(this.getRecord(i));
+			}
+		}
+		if(this.next!=null) {
+			result.addAll(this.next.notEqual(minKey, key));
+		}
+		return result;
+	}
+
+
+
+
 	public boolean containsKey(T key) {
 		for (int i = 0; i < numberOfKeys; ++i)
 			if (this.getKey(i).compareTo(key) == 0) {
@@ -202,7 +273,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 
 	/**
 	 * 
- the passed key from the B+ tree
+	 * the passed key from the B+ tree
 	 */
 	public boolean delete(T key, BPTreeInnerNode<T> parent, int ptr, Ref ref) {
 		for (int i = 0; i < numberOfKeys; ++i)
@@ -215,8 +286,8 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 				// check that node has enough keys
 				if (!this.isRoot() && numberOfKeys < this.minKeys()) {
 					// 1.try to borrow
-					boolean f=false;
-					if (f=borrow(parent, ptr))
+					boolean f = false;
+					if (f = borrow(parent, ptr))
 						return true;
 					// 2.merge
 					System.out.println(f);
@@ -234,11 +305,11 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 */
 	public void deleteAt(int index, Ref ref) {
 		System.out.println("index: " + index + " ref: " + ref);
-		System.out.println("record size: "+records[index].size());
+		System.out.println("record size: " + records[index].size());
 		for (int i = 0; i < records[index].size(); i++) {
 			int pageIdx = records[index].get(i).getPage();
 			int recordIdx = records[index].get(i).getIndexInPage();
-			System.out.println(pageIdx+" "+recordIdx);
+			System.out.println(pageIdx + " " + recordIdx);
 			if (pageIdx == ref.getPage() && recordIdx == ref.getIndexInPage()) {
 				records[index].remove(i);
 				break;
@@ -325,4 +396,9 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 
 		this.setNext(foreignNode.getNext());
 	}
+
+	
+
+	
+	
 }
