@@ -4,6 +4,7 @@ import java.awt.Polygon;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -14,11 +15,14 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
 import java.util.Vector;
+
+import BPTree.BPTree;
+import BPTree.Ref;
+import oracle.spatial.util.RTree;
 
 public class Table implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -26,9 +30,12 @@ public class Table implements Serializable {
 	private int MaximumRowsCountinPage, curIdx, NodeSize;
 	private String tableName, directory, tableHeader, clusteringKey;
 	private Hashtable<String, String> columnTypes;
+	private Hashtable<String,BPTree> colNameIndex;
+
 	private Vector<String> pagesDirectory;
 
 	public Table(String path, String strTableName, Hashtable<String, String> htblColNameType, String strKeyColName,
+
 			int MaximumRowsCountinPage, int nodeSize) throws IOException {
 		this.directory = path + "data/";
 		this.curIdx = -1;
@@ -38,8 +45,10 @@ public class Table implements Serializable {
 		this.clusteringKey = strKeyColName;
 		this.pagesDirectory = new Vector<String>();
 		this.MaximumRowsCountinPage = MaximumRowsCountinPage;
+		this.colNameIndex = new Hashtable<String,BPTree>();
 		createDirectory();
 		initializeColumnsHeader();
+	RTree R = new RTree(1,2,3);
 		save();
 	}
 
@@ -763,6 +772,7 @@ public void deleteFromTable(Hashtable<String, Object> htblColNameValue) throws E
 	}
 
 	public String toString() {
+
 		String r = "";
 		r += tableHeader;
 		for (int i = 0; i < pagesDirectory.size(); i++) {
@@ -773,4 +783,55 @@ public void deleteFromTable(Hashtable<String, Object> htblColNameValue) throws E
 		}
 		return r;
 	}
+	/**
+	 * create index on specified column name by creating BPTree on that column and inserting in it.
+	 * @param strColName The name of the column which index is created on
+	 * @throws DBEngineException If columns, foreign keys or the primary key are not valid
+	 * @throws FileNotFoundException If an error occurred in the stored table file
+	 * @throws IOException If an I/O error occurred
+	 * @throws ClassNotFoundException If an error occurred in the stored table pages format
+	 */
+	 @SuppressWarnings({ "unchecked", "rawtypes" })
+	public void createIndex(String strColName)  throws DBAppException, FileNotFoundException, IOException, ClassNotFoundException {
+		 	String type = columnTypes.get(strColName);
+		 	int colPos = this.getColIdx(strColName);
+		 	BPTree tree = null;
+		 System.out.println(type);
+		 	if (type.equals("java.lang.Integer")) {
+		 		System.out.println("goua 2l if");
+		 		tree = new BPTree<Integer>(NodeSize);
+		 		System.out.println(tree.toString());
+			} else if (type.equals("java.lang.String")) {
+		 		tree = new BPTree<String>(NodeSize);
+			} else if (type.equals("java.lang.Double")) {
+		 		tree = new BPTree<Double>(NodeSize);
+			} else if (type.equals("java.awt.Polygon")) {
+		 		tree = new BPTree<DBPolygon>(NodeSize);
+			} else if (type.equals("java.util.Date")) {
+		 		tree = new BPTree<Date>(NodeSize);
+			} else if (type.equals("java.lang.Boolean")) {
+		 		tree = new BPTree<Boolean>(NodeSize);
+
+			}
+		 	colNameIndex.put(strColName, tree);	 	
+		 	
+			ObjectInputStream ois;
+		 	for (int index = 0; index <= curIdx; index++) {
+				File f = new File(directory + tableName + "_" + index+".class");
+				
+		    	ois = new ObjectInputStream(new FileInputStream(f));
+		    	Page p = (Page) ois.readObject();
+				for(int i = 0; i < p.size(); ++i)
+				{
+					Record r = p.get(i);
+					Ref recordReference = new Ref(index, i);
+					tree.insert((Comparable) r.get(colPos), recordReference);
+				}
+				
+				ois.close();
+		 	}
+		 	System.out.println("-----------------------------------------------");
+			System.out.println(tree.toString());
+		 	this.save();
+	  }
 }

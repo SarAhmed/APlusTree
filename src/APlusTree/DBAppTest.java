@@ -11,7 +11,8 @@ public class DBAppTest {
 	
 public static void main(String[] args) throws Exception {
 		DBApp db = new DBApp();
-		testDelete(db);
+	//testInsert(db);
+db.createBTreeIndex("Ahmed", "id");
 //		Hashtable<String, Object> htblColNameValue = new Hashtable();
 //		testUpdate(db);
 //		Random rnd= new Random();
@@ -36,6 +37,7 @@ public static void main(String[] args) throws Exception {
 ////		db.insertIntoTable("Ahmed", htblColNameValue);
 //
 //	
+		
 		System.out.println(db.displayTable("Ahmed"));
 	}
 

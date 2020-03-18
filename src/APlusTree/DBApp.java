@@ -11,7 +11,7 @@ import java.util.Hashtable;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-public class DBApp { 
+public class DBApp {
 	private static String mainDir = "";
 	private Properties dbProps;
 	private String DataBaseDir = "";
@@ -44,7 +44,7 @@ public class DBApp {
 
 	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws Exception {
 		Table t = getTable(strTableName);
-		if(t==null)
+		if (t == null)
 			throw new DBAppException("The Table you are trying to Insert to does not exist.");
 		t.insertIntoTable(htblColNameValue);
 
@@ -53,7 +53,7 @@ public class DBApp {
 	public void updateTable(String strTableName, String strClusteringKey, Hashtable<String, Object> htblColNameValue)
 			throws DBAppException, FileNotFoundException, ClassNotFoundException, IOException {
 		Table t = getTable(strTableName);
-		if(t==null)
+		if (t == null)
 			throw new DBAppException("The Table you are trying to update does not exist.");
 		t.updateTableBS(strClusteringKey, htblColNameValue);
 
@@ -61,7 +61,7 @@ public class DBApp {
 
 	public void deleteFromTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws Exception {
 		Table t = getTable(strTableName);
-		if(t==null)
+		if (t == null)
 			throw new DBAppException("The Table you are trying to delete from does not exist.");
 		t.deleteFromTable(htblColNameValue);
 
@@ -132,6 +132,15 @@ public class DBApp {
 	public String displayTable(String tableName) throws FileNotFoundException, ClassNotFoundException, IOException {
 		Table t = (Table) this.getTable(tableName);
 		return t.toString();
+	}
+
+	public void createBTreeIndex(String strTableName, String strColName)
+			throws DBAppException, FileNotFoundException, ClassNotFoundException, IOException {
+		Table t = (Table) this.getTable(strTableName);
+		if (t == null)
+			throw new DBAppException("The entered table does not exist");
+		t.createIndex(strColName);
+
 	}
 
 	public static void main(String[] args) throws Exception {
