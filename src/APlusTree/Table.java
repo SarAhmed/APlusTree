@@ -331,8 +331,6 @@ public class Table implements Serializable {
 		addRecordToIndex(r, new Ref(pagesDirectory.get(pageIdx)));
 		insertedToIndex=true;
 		}
-		String  oldDirectory=null;
-		String newDirectory=null;
 		int firstPageIdx=pageIdx;
 		for (int i = pageIdx; i < pageDirectorySize && !inserted; i++) {
 			Page p = deserialize(pagesDirectory.get(i));
@@ -362,7 +360,6 @@ public class Table implements Serializable {
 			inserted = true;
 			if(!insertedToIndex) {
 				addRecordToIndex(r, new Ref(pagesDirectory.get(pageIdx)));
-				
 			}else {
 				updateRecordRef(r, new Ref(pagesDirectory.get(pagesDirectory.size()-2)), new Ref(pagesDirectory.get(pagesDirectory.size()-1)));
 				
