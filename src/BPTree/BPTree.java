@@ -31,6 +31,11 @@ public class BPTree<T extends Comparable<T>> implements Serializable {
 		delete(key, ref);
 		insert(newVal,ref);
 	}
+	public void updateRef(T key,Ref ref, Ref newRef) {
+		delete(key, ref);
+		insert(key,newRef);
+		
+	}
 
 	/**
 	 * Inserts the specified key associated with the given record in the B+ tree

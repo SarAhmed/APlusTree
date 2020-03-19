@@ -38,6 +38,32 @@ public class Record implements Serializable{
 			s += o.toString() + ", ";
 		return s;
 	}
+	
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((vals == null) ? 0 : vals.hashCode());
+		return result;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Record other = (Record) obj;
+		if (vals == null) {
+			if (other.vals != null)
+				return false;
+		} else if (!vals.equals(other.vals))
+			return false;
+		return true;
+	}
 
 	
 }

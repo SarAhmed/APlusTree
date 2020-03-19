@@ -64,6 +64,7 @@ public class BPTreeInnerNode<T extends Comparable<T>> extends BPTreeNode<T> impl
 			return 1;
 		return (order + 2) / 2 - 1;
 	}
+	
 
 	/**
 	 * insert given key in the corresponding index.
@@ -312,6 +313,7 @@ public class BPTreeInnerNode<T extends Comparable<T>> extends BPTreeNode<T> impl
 	public Vector<Ref> searchGreaterThan(T key) {
 		return children[findIndex(key)].searchGreaterThan(key);
 	}
+	
 	@Override
 	public Vector<Ref> searchSmallerThan(Comparable minKey, T key) {
 		return children[findIndex((T)minKey)].searchSmallerThan(minKey,key);

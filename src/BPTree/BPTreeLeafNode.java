@@ -308,13 +308,14 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 		System.out.println("record size: " + records[index].size());
 		for (int i = 0; i < records[index].size(); i++) {
 			int pageIdx = records[index].get(i).getPage();
-			int recordIdx = records[index].get(i).getIndexInPage();
-			System.out.println(pageIdx + " " + recordIdx);
-			if (pageIdx == ref.getPage() && recordIdx == ref.getIndexInPage()) {
+			//int recordIdx = records[index].get(i).getIndexInPage();
+			System.out.println(pageIdx + " " );
+			if (pageIdx == ref.getPage() ) {
 				records[index].remove(i);
 				break;
 			}
 		}
+		
 		if (records[index].size() == 0) {
 			for (int i = index; i < numberOfKeys - 1; ++i) {
 				keys[i] = keys[i + 1];
@@ -323,6 +324,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 			numberOfKeys--;
 		}
 	}
+	
 
 	/**
 	 * tries to borrow a key from the left or right sibling
