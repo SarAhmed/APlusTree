@@ -44,6 +44,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 * @return the reference of the queried index
 	 */
 	public Vector<Ref> getRecord(int index) {
+
 		return records[index];
 	}
 
@@ -164,6 +165,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 * @return the expected index of the key
 	 */
 	public int findIndex(T key) {
+
 		for (int i = 0; i < numberOfKeys; ++i) {
 			int cmp = getKey(i).compareTo(key);
 			if (cmp > 0)
@@ -177,6 +179,8 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 */
 	@Override
 	public Vector<Ref> search(T key) {
+
+		
 		for (int i = 0; i < numberOfKeys; ++i)
 			if (this.getKey(i).compareTo(key) == 0)
 				return this.getRecord(i);
@@ -184,6 +188,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	}
 
 	public Vector<Ref> searchGreaterThan(T key) {
+
 		Vector<Ref> result = new Vector<Ref>();
 
 		for (int i = 0; i < numberOfKeys; ++i) {
@@ -238,6 +243,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 		return result;
 	}
 	public Vector<Ref> notEqual(Comparable minKey,T key) {
+
 		Vector<Ref> result = new Vector<Ref>();
 
 		for (int i = 0; i < numberOfKeys; ++i) {
@@ -276,6 +282,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 * the passed key from the B+ tree
 	 */
 	public boolean delete(T key, BPTreeInnerNode<T> parent, int ptr, Ref ref) {
+
 		for (int i = 0; i < numberOfKeys; ++i)
 			if (keys[i].compareTo(key) == 0) {
 				this.deleteAt(i, ref);
@@ -307,10 +314,11 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 		System.out.println("index: " + index + " ref: " + ref);
 		System.out.println("record size: " + records[index].size());
 		for (int i = 0; i < records[index].size(); i++) {
-			int pageIdx = records[index].get(i).getPage();
+		//	String pageDirectory = records[index].get(i).getPageDirectory();
+			Ref recordRef=records[index].get(i);
 			//int recordIdx = records[index].get(i).getIndexInPage();
-			System.out.println(pageIdx + " " );
-			if (pageIdx == ref.getPage() ) {
+			//System.out.println(pageDirectory + " " );
+			if (recordRef.equals(ref) ) {
 				records[index].remove(i);
 				break;
 			}

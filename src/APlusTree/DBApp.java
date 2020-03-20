@@ -7,7 +7,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.PrintWriter;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Properties;
 
@@ -39,6 +41,16 @@ public class DBApp {
 		int nodeSize = Integer.parseInt(dbProps.getProperty("NodeSize"));
 		new Table(DataBaseDir, strTableName, htblColNameType, strClusteringKeyColumn, MaximumRowsCountinPage, nodeSize);
 		System.out.println("Table is created successfully: " + strTableName);
+
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Iterator selectFromTable(SQLTerm[] arrSQLTerms,String[] strarrOperators) throws Exception{
+		String strTableName = arrSQLTerms[0].get_strTableName();
+		Table t = getTable(strTableName);
+		
+		Iterator<Record> ans = t.selectFromTable(arrSQLTerms, strarrOperators);
+		return ans;
 
 	}
 

@@ -15,8 +15,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -30,7 +32,7 @@ public class Table implements Serializable {
 	private int MaximumRowsCountinPage, curIdx, NodeSize;
 	private String tableName, directory, tableHeader, clusteringKey;
 	private Hashtable<String, String> columnTypes;
-	private Hashtable<String,BPTree> colNameIndex;
+	private Hashtable<String, BPTree> colNameIndex;
 
 	private Vector<String> pagesDirectory;
 
@@ -45,7 +47,7 @@ public class Table implements Serializable {
 		this.clusteringKey = strKeyColName;
 		this.pagesDirectory = new Vector<String>();
 		this.MaximumRowsCountinPage = MaximumRowsCountinPage;
-		this.colNameIndex = new Hashtable<String,BPTree>();
+		this.colNameIndex = new Hashtable<String, BPTree>();
 		createDirectory();
 		initializeColumnsHeader();
 		save();
@@ -175,6 +177,49 @@ public class Table implements Serializable {
 		}
 		// TO DO
 		throw new DBAppException("invalid input format");
+	}
+
+	@SuppressWarnings("unchecked")
+	private HashSet<Record> linearSearch(Comparable val, String colName, String Op) throws IOException {
+		String type = this.columnTypes.get(colName).trim();
+		HashSet<Record> ans = new HashSet<Record>();
+		for (int i = 0; i < pagesDirectory.size(); i++) {
+			Page p = deserialize(pagesDirectory.get(i));
+			Vector<Record> pageRecords = p.getRecords();
+			for (int j = 0; j < pageRecords.size(); j++) {
+				Record currRecord = pageRecords.get(j);
+				Comparable currKey = getComparable(currRecord.get(getColIdx(colName)), type);
+				switch (Op) {
+				case "=":
+					if (currKey.compareTo(val) == 0)
+						ans.add(currRecord);
+					break;
+				case "!=":
+					if (currKey.compareTo(val) != 0)
+						ans.add(currRecord);
+					break;
+				case ">":
+					if (currKey.compareTo(val) > 0)
+						ans.add(currRecord);
+					break;
+				case ">=":
+					if (currKey.compareTo(val) >= 0)
+						ans.add(currRecord);
+					break;
+				case "<":
+					if (currKey.compareTo(val) < 0)
+						ans.add(currRecord);
+					break;
+				case "<=":
+					if (currKey.compareTo(val) <= 0)
+						ans.add(currRecord);
+					break;
+
+				}
+
+			}
+		}
+		return ans;
 	}
 
 	private int[] BinarySearch(Hashtable<String, Object> htblColNameValue) throws Exception {
@@ -319,33 +364,40 @@ public class Table implements Serializable {
 			}
 			r.add(value);
 		}
-		// TO DO replace this with htblColName.add("touch date",getDate()) at the
-		// beginning if it's inserted in metadata
+
 		r.add(getDate());
 
 		int pageDirectorySize = pagesDirectory.size();
 		boolean inserted = false;
-		// add the record to all indices with reference to pageIdx directory
-		boolean insertedToIndex=false;
-		if(pageIdx<pagesDirectory.size()) {
-		addRecordToIndex(r, new Ref(pagesDirectory.get(pageIdx)));
-		insertedToIndex=true;
+		/*
+		 * insert in all available indexing data structures on that table
+		 */
+		boolean insertedToIndex = false;
+		if (pageIdx < pagesDirectory.size()) {
+			addRecordToIndex(r, new Ref(pagesDirectory.get(pageIdx), r.getId()));
+			insertedToIndex = true;
 		}
-		int firstPageIdx=pageIdx;
+		int firstPageIdx = pageIdx;
 		for (int i = pageIdx; i < pageDirectorySize && !inserted; i++) {
 			Page p = deserialize(pagesDirectory.get(i));
-			
+
 			if (!(inserted = p.add(r, recordIdx))) {
-					
+
 				Record removedRecord = p.remove(p.size() - 1);
-				
+
 				// this for tracing only replace it without if (only addRecord())
 				if (!p.add(r, recordIdx)) {
 					// TO DO remove this case
 					throw new Exception("feh haga 3'lt");
 				}
-				if(i!=firstPageIdx) {
-					updateRecordRef(r, new Ref(pagesDirectory.get(i-1)), new Ref(pagesDirectory.get(i)));
+				/*
+				 * if i = first page then we already have inserted the corresponding keys in the
+				 * indexing data structures otherwise we are just updating the ref of existing
+				 * records(moves from page i to page i+1)
+				 */
+				if (i != firstPageIdx) {
+					updateRecordRef(r, new Ref(pagesDirectory.get(i - 1), r.getId()),
+							new Ref(pagesDirectory.get(i), r.getId()));
 				}
 				r = removedRecord;
 				recordIdx = 0;
@@ -358,11 +410,12 @@ public class Table implements Serializable {
 			Page newPage = createPage();
 			newPage.add(r, recordIdx);
 			inserted = true;
-			if(!insertedToIndex) {
-				addRecordToIndex(r, new Ref(pagesDirectory.get(pageIdx)));
-			}else {
-				updateRecordRef(r, new Ref(pagesDirectory.get(pagesDirectory.size()-2)), new Ref(pagesDirectory.get(pagesDirectory.size()-1)));
-				
+			if (!insertedToIndex) {
+				addRecordToIndex(r, new Ref(pagesDirectory.get(pageIdx), r.getId()));
+			} else {
+				updateRecordRef(r, new Ref(pagesDirectory.get(pagesDirectory.size() - 2), r.getId()),
+						new Ref(pagesDirectory.get(pagesDirectory.size() - 1), r.getId()));
+
 			}
 		}
 		save();
@@ -371,30 +424,30 @@ public class Table implements Serializable {
 		return inserted;
 	}
 
-	private void updateRecordRef(Record r,Ref oldRef,Ref newRef) {
-		
-		for(Entry e:colNameIndex.entrySet()) {
-			String colName = (String)e.getKey();
-			BPTree tree=(BPTree<Comparable<T>>)e.getValue();
-			int colIdx=getColIdx(colName);
-			Comparable key= (Comparable)r.get(colIdx);
+	private void updateRecordRef(Record r, Ref oldRef, Ref newRef) throws IOException {
+
+		for (Entry e : colNameIndex.entrySet()) {
+			String colName = (String) e.getKey();
+			BPTree tree = (BPTree) e.getValue();
+			int colIdx = getColIdx(colName);
+			Comparable key = (Comparable) r.get(colIdx);
 			tree.updateRef(key, oldRef, newRef);
-			
+
 		}
 	}
-	
-	private void addRecordToIndex(Record r,Ref ref) {
-		
-		for(Entry e:colNameIndex.entrySet()) {
-			String colName = (String)e.getKey();
-			BPTree tree=(BPTree<Comparable<T>>)e.getValue();
-			int colIdx=getColIdx(colName);
-			Comparable key= (Comparable)r.get(colIdx);
-			tree.insert(key,ref );
-			
+
+	private void addRecordToIndex(Record r, Ref ref) throws IOException {
+
+		for (Entry e : colNameIndex.entrySet()) {
+			String colName = (String) e.getKey();
+			BPTree tree = (BPTree) e.getValue();
+			int colIdx = getColIdx(colName);
+			Comparable key = (Comparable) r.get(colIdx);
+			tree.insert(key, ref);
+
 		}
 	}
-	
+
 	private static Comparable getComparable(Object value, String type) {
 		Comparable c = null;
 		if (type.equals("java.lang.Integer")) {
@@ -461,90 +514,90 @@ public class Table implements Serializable {
 
 	}
 
-//	public boolean updateTable(String strClusteringKey, Hashtable<String, Object> htblColNameValue)
-//			throws DBAppException, IOException {
-//		// from here i will only make every Polygon as DBPolygon
-//		ArrayList<String> polygonColumns = new ArrayList();
-//		for (Entry<String, Object> e : htblColNameValue.entrySet()) {
-//			if (e.getValue() instanceof Polygon) {
-//				polygonColumns.add(e.getKey());
-//			}
-//		}
-//
-//		for (String s : polygonColumns) {
-//			Polygon p = (Polygon) htblColNameValue.get(s);
-//			htblColNameValue.put(s, new DBPolygon(p));
-//		}
-//
-//		// this is the end of making every polygon as DBPolygon
-//
-//		if (!checkValidInput(htblColNameValue)) {
-//			throw new DBAppException("Invalid Input Format");
-//		}
-//
-//		int keyIdx = this.getColIdx(getClusteringKey());
-//		ArrayList<String[]> tableInfo = this.getColInfo();
-//		Comparable searchKey = null;
-//		String type = "";
-//		for (int i = 0; i < tableInfo.size(); i++) {
-//			if (tableInfo.get(i)[3].trim().equals("True")) {
-//				type = tableInfo.get(i)[2].trim();
-//				if (type.equals("java.lang.Integer")) {
-//					searchKey = Integer.parseInt(strClusteringKey);
-//				} else if (type.equals("java.lang.String")) {
-//					searchKey = strClusteringKey;
-//				} else if (type.equals("java.lang.Double")) {
-//					searchKey = Double.parseDouble(strClusteringKey);
-//				} else if (type.equals("java.awt.Polygon")) {
-//					searchKey = new DBPolygon(strClusteringKey);
-//				} else if (type.equals("java.util.Date")) {
-//					searchKey = strToDateParser(strClusteringKey);
-//				} else if (type.equals("java.lang.Boolean")) {
-//					searchKey = Boolean.parseBoolean(strClusteringKey);
-//
-//				}
-//				break;
-//			}
-//		}
-//
-//		boolean stop = false;
-//		for (int i = 0; i < pagesDirectory.size() && !stop; i++) {
-//			Page p = deserialize(pagesDirectory.get(i));
-//			boolean updated = false;
-//			for (int k = 0; k < p.size(); k++) {
-//				Record currRecord = p.get(k);
-//
-//				Comparable currKey = getComparable(currRecord.get(keyIdx), type);
-//				if (currKey.compareTo(searchKey) == 0) {
-//					for (Entry<String, Object> entry : htblColNameValue.entrySet()) {
-//						String colName = entry.getKey();
-//						Object value = entry.getValue();
-//						int colIdx = getColIdx(colName);
-//
-//						currRecord.update(colIdx, value);
-//						updated = true;
-//					}
-//					// TO DO if touchDate is in MetaData => add to htblColNames.add(String
-//					// touchDate,getDate) at the begning of the method
-//					if (updated) {
-//						currRecord.update(currRecord.getValues().size() - 1, getDate());
-//					}
-//
-//				} else if (currKey.compareTo(searchKey) > 0) {
-//					stop = true;
-//					break;
-//				}
-//			}
-//			if (updated) {
-//				p.save();
-//			}
-//		}
-//
-//		return true;
-//	}
+	// public boolean updateTable(String strClusteringKey, Hashtable<String, Object>
+	// htblColNameValue)
+	// throws DBAppException, IOException {
+	// // from here i will only make every Polygon as DBPolygon
+	// ArrayList<String> polygonColumns = new ArrayList();
+	// for (Entry<String, Object> e : htblColNameValue.entrySet()) {
+	// if (e.getValue() instanceof Polygon) {
+	// polygonColumns.add(e.getKey());
+	// }
+	// }
+	//
+	// for (String s : polygonColumns) {
+	// Polygon p = (Polygon) htblColNameValue.get(s);
+	// htblColNameValue.put(s, new DBPolygon(p));
+	// }
+	//
+	// // this is the end of making every polygon as DBPolygon
+	//
+	// if (!checkValidInput(htblColNameValue)) {
+	// throw new DBAppException("Invalid Input Format");
+	// }
+	//
+	// int keyIdx = this.getColIdx(getClusteringKey());
+	// ArrayList<String[]> tableInfo = this.getColInfo();
+	// Comparable searchKey = null;
+	// String type = "";
+	// for (int i = 0; i < tableInfo.size(); i++) {
+	// if (tableInfo.get(i)[3].trim().equals("True")) {
+	// type = tableInfo.get(i)[2].trim();
+	// if (type.equals("java.lang.Integer")) {
+	// searchKey = Integer.parseInt(strClusteringKey);
+	// } else if (type.equals("java.lang.String")) {
+	// searchKey = strClusteringKey;
+	// } else if (type.equals("java.lang.Double")) {
+	// searchKey = Double.parseDouble(strClusteringKey);
+	// } else if (type.equals("java.awt.Polygon")) {
+	// searchKey = new DBPolygon(strClusteringKey);
+	// } else if (type.equals("java.util.Date")) {
+	// searchKey = strToDateParser(strClusteringKey);
+	// } else if (type.equals("java.lang.Boolean")) {
+	// searchKey = Boolean.parseBoolean(strClusteringKey);
+	//
+	// }
+	// break;
+	// }
+	// }
+	//
+	// boolean stop = false;
+	// for (int i = 0; i < pagesDirectory.size() && !stop; i++) {
+	// Page p = deserialize(pagesDirectory.get(i));
+	// boolean updated = false;
+	// for (int k = 0; k < p.size(); k++) {
+	// Record currRecord = p.get(k);
+	//
+	// Comparable currKey = getComparable(currRecord.get(keyIdx), type);
+	// if (currKey.compareTo(searchKey) == 0) {
+	// for (Entry<String, Object> entry : htblColNameValue.entrySet()) {
+	// String colName = entry.getKey();
+	// Object value = entry.getValue();
+	// int colIdx = getColIdx(colName);
+	//
+	// currRecord.update(colIdx, value);
+	// updated = true;
+	// }
+	// // TO DO if touchDate is in MetaData => add to htblColNames.add(String
+	// // touchDate,getDate) at the begning of the method
+	// if (updated) {
+	// currRecord.update(currRecord.getValues().size() - 1, getDate());
+	// }
+	//
+	// } else if (currKey.compareTo(searchKey) > 0) {
+	// stop = true;
+	// break;
+	// }
+	// }
+	// if (updated) {
+	// p.save();
+	// }
+	// }
+	//
+	// return true;
+	// }
 
-	
-public boolean updateTableBS(String strClusteringKey, Hashtable<String, Object> htblColNameValue)
+	public boolean updateTableBS(String strClusteringKey, Hashtable<String, Object> htblColNameValue)
 			throws DBAppException, IOException {
 		// from here i will only make every Polygon as DBPolygon
 		ArrayList<String> polygonColumns = new ArrayList();
@@ -620,12 +673,12 @@ public boolean updateTableBS(String strClusteringKey, Hashtable<String, Object> 
 					for (Entry<String, Object> entry : htblColNameValue.entrySet()) {
 						String colName = entry.getKey();
 						// after adding index
-						Comparable value =(Comparable) entry.getValue();
+						Comparable value = (Comparable) entry.getValue();
 						int colIdx = getColIdx(colName);
-						if(hasIndex(colName)) {
-							BPTree bTree=colNameIndex.get(colName);
-							Comparable oldValue=(Comparable)currRecord.get(colIdx);
-							bTree.update(oldValue, new Ref(pagesDirectory.get(i)), value);
+						if (hasIndex(colName)) {
+							BPTree bTree = colNameIndex.get(colName);
+							Comparable oldValue = (Comparable) currRecord.get(colIdx);
+							bTree.update(oldValue, new Ref(pagesDirectory.get(i), currRecord.getId()), value);
 						}
 
 						currRecord.update(colIdx, value);
@@ -650,10 +703,9 @@ public boolean updateTableBS(String strClusteringKey, Hashtable<String, Object> 
 		return true;
 	}
 
-	
-public void deleteFromTable(Hashtable<String, Object> htblColNameValue) throws Exception {
+	public void deleteFromTable(Hashtable<String, Object> htblColNameValue) throws Exception {
 		getColInfo();
-		
+
 		ArrayList<String> polygonColumns = new ArrayList();
 		for (Entry<String, Object> e : htblColNameValue.entrySet()) {
 			if (e.getValue() instanceof Polygon) {
@@ -667,16 +719,15 @@ public void deleteFromTable(Hashtable<String, Object> htblColNameValue) throws E
 		}
 
 		String clusteringKey = getClusteringKey();
-		
+
 		if (!checkValidInput(htblColNameValue)) {
 			throw new Exception("invalid data types");
 		}
 
 		if (!htblColNameValue.containsKey(clusteringKey)) {
 			// from here i will only make every Polygon as DBPolygon
-						// this is the end of making every polygon as DBPolygon
+			// this is the end of making every polygon as DBPolygon
 
-		
 			for (int i = 0; i < pagesDirectory.size(); i++) {
 				Page p = deserialize(pagesDirectory.get(i));
 				for (int k = 0; k < p.size(); k++) {
@@ -695,28 +746,28 @@ public void deleteFromTable(Hashtable<String, Object> htblColNameValue) throws E
 
 				}
 			}
-		}else {
+		} else {
 			System.out.println("******************Da5alt 2l else part***********************");
-			int clusteredIdx=getColIdx(clusteringKey);
-			String type = this.columnTypes.get(this.getClusteringKey()).trim(); 
-			Comparable searchKey=getComparable(htblColNameValue.get(this.getClusteringKey()), type);
-			boolean binaryUsed=false;
-			for(int i=0;i<pagesDirectory.size();i++) {
-				Page p=deserialize(pagesDirectory.get(i));
-				Record lastRecord=p.get(p.size()-1);
-				Comparable lastRecordKey=getComparable(lastRecord.get(clusteredIdx), type);
-				
+			int clusteredIdx = getColIdx(clusteringKey);
+			String type = this.columnTypes.get(this.getClusteringKey()).trim();
+			Comparable searchKey = getComparable(htblColNameValue.get(this.getClusteringKey()), type);
+			boolean binaryUsed = false;
+			for (int i = 0; i < pagesDirectory.size(); i++) {
+				Page p = deserialize(pagesDirectory.get(i));
+				Record lastRecord = p.get(p.size() - 1);
+				Comparable lastRecordKey = getComparable(lastRecord.get(clusteredIdx), type);
+
 				if (lastRecordKey.compareTo(searchKey) < 0)
 					continue;
-				
-				Vector<Record> pageRecords= p.getRecords();
+
+				Vector<Record> pageRecords = p.getRecords();
 				int deleteIdx = 0;
-				
+
 				if (!binaryUsed) {
 					deleteIdx = BSVector(pageRecords, searchKey, clusteredIdx, type);
 					binaryUsed = true;
 				}
-				
+
 				for (int k = deleteIdx; k < p.size(); k++) {
 					Record currRecord = p.get(k);
 					if (matchRecord(currRecord, htblColNameValue)) {
@@ -733,12 +784,8 @@ public void deleteFromTable(Hashtable<String, Object> htblColNameValue) throws E
 
 				}
 
-				
-				
-				
-				
 			}
-			
+
 		}
 
 		this.save();
@@ -826,112 +873,405 @@ public void deleteFromTable(Hashtable<String, Object> htblColNameValue) throws E
 		}
 		return r;
 	}
+
 	/**
-	 * create index on specified column name by creating BPTree on that column and inserting in it.
+	 * create index on specified column name by creating BPTree on that column and
+	 * inserting in it.
+	 * 
 	 * @param strColName The name of the column which index is created on
-	 * @throws DBEngineException If columns, foreign keys or the primary key are not valid
-	 * @throws FileNotFoundException If an error occurred in the stored table file
-	 * @throws IOException If an I/O error occurred
-	 * @throws ClassNotFoundException If an error occurred in the stored table pages format
+	 * @throws DBEngineException      If columns, foreign keys or the primary key
+	 *                                are not valid
+	 * @throws FileNotFoundException  If an error occurred in the stored table file
+	 * @throws IOException            If an I/O error occurred
+	 * @throws ClassNotFoundException If an error occurred in the stored table pages
+	 *                                format
 	 */
 	// TO DO update metadata
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void createIndex(String strColName)  throws DBAppException, FileNotFoundException, IOException, ClassNotFoundException {
-		 	String type = columnTypes.get(strColName);
-		 	int colPos = this.getColIdx(strColName);
-		 	BPTree tree = null;
-		 System.out.println(type);
-		 	if (type.equals("java.lang.Integer")) {
-		 		System.out.println("goua 2l if");
-		 		tree = new BPTree<Integer>(NodeSize);
-		 		System.out.println(tree.toString());
-			} else if (type.equals("java.lang.String")) {
-		 		tree = new BPTree<String>(NodeSize);
-			} else if (type.equals("java.lang.Double")) {
-		 		tree = new BPTree<Double>(NodeSize);
-			} else if (type.equals("java.awt.Polygon")) {
-		 		tree = new BPTree<DBPolygon>(NodeSize);
-			} else if (type.equals("java.util.Date")) {
-		 		tree = new BPTree<Date>(NodeSize);
-			} else if (type.equals("java.lang.Boolean")) {
-		 		tree = new BPTree<Boolean>(NodeSize);
-
-			}
-		 	colNameIndex.put(strColName, tree);	 	
-		 	
-			ObjectInputStream ois;
-		 	for (int pageIdx = 0; pageIdx < pagesDirectory.size(); pageIdx++) {
-//				File f = new File(directory + tableName + "_" + index+".class");
-//				if(f.exists())
-//		    	ois = new ObjectInputStream(new FileInputStream(f));
-		    	Page p = deserialize(pagesDirectory.get(pageIdx));
-				for(int i = 0; i < p.size(); ++i)
-				{
-					Record r = p.get(i);
-					Ref recordReference = new Ref(pagesDirectory.get(pageIdx));
-					tree.insert((Comparable) r.get(colPos), recordReference);
-				}
-				
-				//	ois.close();
-		 	}
-		 	System.out.println("-----------------------------------------------");
+	public void createIndex(String strColName)
+			throws DBAppException, FileNotFoundException, IOException, ClassNotFoundException {
+		String type = columnTypes.get(strColName);
+		int colPos = this.getColIdx(strColName);
+		BPTree tree = null;
+		System.out.println(type);
+		if (type.equals("java.lang.Integer")) {
+			System.out.println("goua 2l if");
+			tree = new BPTree<Integer>(NodeSize);
 			System.out.println(tree.toString());
-		 	this.save();
-	  }
+		} else if (type.equals("java.lang.String")) {
+			tree = new BPTree<String>(NodeSize);
+		} else if (type.equals("java.lang.Double")) {
+			tree = new BPTree<Double>(NodeSize);
+		} else if (type.equals("java.awt.Polygon")) {
+			tree = new BPTree<DBPolygon>(NodeSize);
+		} else if (type.equals("java.util.Date")) {
+			tree = new BPTree<Date>(NodeSize);
+		} else if (type.equals("java.lang.Boolean")) {
+			tree = new BPTree<Boolean>(NodeSize);
 
-	private static HashSet<Record> and(HashSet<Record> a,HashSet<Record> b){
-		HashSet<Record> ans=new HashSet<Record>();
-		for(Record r:a) {
-			if(b.contains(r))ans.add(r);
 		}
-		for(Record r:b) {
-			if(a.contains(r))ans.add(r);
+		colNameIndex.put(strColName, tree);
+		System.out.println("sreColName: " + strColName + "**********************");
+
+		ObjectInputStream ois;
+		for (int pageIdx = 0; pageIdx < pagesDirectory.size(); pageIdx++) {
+			// File f = new File(directory + tableName + "_" + index+".class");
+			// if(f.exists())
+			// ois = new ObjectInputStream(new FileInputStream(f));
+			Page p = deserialize(pagesDirectory.get(pageIdx));
+			for (int i = 0; i < p.size(); ++i) {
+				Record r = p.get(i);
+				Ref recordReference = new Ref(pagesDirectory.get(pageIdx), r.getId());
+				tree.insert((Comparable) r.get(colPos), recordReference);
+			}
+
+			// ois.close();
 		}
-		return ans;
-		
+		System.out.println("-----------------------------------------------");
+		System.out.println(tree.toString());
+		this.save();
 	}
 
-	private static HashSet<Record> or(HashSet<Record> a,HashSet<Record> b){
-		
-		for(Record r:b) {
-			if(!a.contains(r))a.add(r);
+	private static HashSet<Record> and(HashSet<Record> a, HashSet<Record> b) {
+		HashSet<Record> ans = new HashSet<Record>();
+		// System.out.println("I am in AND");
+		for (Record r : a) {
+			for (Record f : b) {
+				if (r.equals(f))
+					ans.add(r);
+			}
 		}
-		return a;
-		
-	}private static HashSet<Record> xor(HashSet<Record> a,HashSet<Record> b){
-		HashSet<Record> ans=new HashSet<Record>();
-		for(Record r:a) {
-			if(!b.contains(r))ans.add(r);
-		}
-		for(Record r:b) {
-			if(!a.contains(r))ans.add(r);
+		/*
+		 * for (Record r : b) { System.out.println("I am a B record "+r);
+		 * //System.out.println(a.equals(b)?
+		 * "wohoooooooooooooooooooooooooooooooooooooooo!":"false"); if (a.contains(r))
+		 * ans.add(r); }
+		 */
+		return ans;
+
+	}
+
+	private static HashSet<Record> or(HashSet<Record> a, HashSet<Record> b) {
+		HashSet<Record> ans = new HashSet<Record>();
+		ans.addAll(a);
+		all: for (Record r : b) {
+			for (Record f : a)
+				if (r.equals(f))
+					continue all;
+
+			ans.add(r);
+
 		}
 		return ans;
-		
+
 	}
-	
+
+	private static HashSet<Record> xor(HashSet<Record> a, HashSet<Record> b) {
+		HashSet<Record> ans = new HashSet<Record>();
+		all: for (Record r : b) {
+			for (Record f : a)
+				if (r.equals(f))
+					continue all;
+
+			ans.add(r);
+
+		}
+		all: for (Record r : a) {
+			for (Record f : b)
+				if (r.equals(f))
+					continue all;
+
+			ans.add(r);
+
+		}
+		return ans;
+
+	}
+
 	private boolean hasIndex(String colName) {
-		return colNameIndex.contains(colName);
+		return colNameIndex.containsKey(colName);
 	}
-	
-	private HashSet<Record> getRecordsFromRef(Vector<Ref> refs){
-		HashSet<Record> ans=new HashSet<Record>();
-		for(Ref r:refs) {
-		String pageDirectoryString=r.getPageDirectory();
-		Page p= deserialize(pageDirectoryString);
-		p.get
+
+	private HashSet<Record> getRecordsFromRef(Vector<Ref> refs) {
+		HashMap<String, HashSet<Long>> pageToRecord = new HashMap();
+		for (Ref r : refs) {
+			String currDirectory = r.getPageDirectory();
+			long id = r.getRecordId();
+			HashSet<Long> curSet = pageToRecord.getOrDefault(currDirectory, new HashSet<Long>());
+			curSet.add(id);
+			pageToRecord.put(currDirectory, curSet);
 		}
-		
+
+		HashSet<Record> ans = new HashSet<Record>();
+		for (Entry<String, HashSet<Long>> entry : pageToRecord.entrySet()) {
+			String pageDirectory = (String) entry.getKey();
+			HashSet<Long> recordsId = entry.getValue();
+			Page p = deserialize(pageDirectory);
+			for (int i = 0; i < p.size(); i++) {
+				Record curRecord = p.get(i);
+				if (recordsId.contains(curRecord.getId()))
+					ans.add(curRecord);
+			}
+		}
+		return ans;
 	}
-	public <T extends Comparable<T>>HashSet<Record> selectEqual(String colName,T val) throws IOException{
-		HashSet<Record> ans=new HashSet<Record>();
-		int colIndex=getColIdx(colName);
-		if(hasIndex(colName)) {
-			BPTree tree=colNameIndex.get(colName);
-			tree.search(val);
-		}else {
-			
+
+	@SuppressWarnings({ "unchecked", "unused" })
+	public <T extends Comparable<T>> HashSet<Record> selectEqual(String colName, T val) throws Exception {
+		HashSet<Record> ans = new HashSet<Record>();
+
+		// int colIndex = getColIdx(colName);
+
+		if (hasIndex(colName)) {
+			System.out.println("USING INDEX");
+			BPTree tree = colNameIndex.get(colName);
+			ans = getRecordsFromRef(tree.search(val));
+		} else if (colName.equals(getClusteringKey())) {
+			System.out.println("USING CLUSTRING KEY");
+			Hashtable<String, Object> t = new Hashtable<String, Object>();
+			t.put(colName, val);
+			int[] a = BinarySearch(t);
+			int startPage = a[0];
+			int startIdx = a[1];
+			String type = this.columnTypes.get(colName).trim();
+			for (int i = startPage; i < pagesDirectory.size(); i++) {
+				Page p = deserialize(pagesDirectory.get(i));
+				Vector<Record> pageRecords = p.getRecords();
+				for (int j = startIdx; j < pageRecords.size(); j++) {
+					Record currRecord = pageRecords.get(j);
+					Comparable currKey = getComparable(currRecord.get(getColIdx(colName)), type);
+					if (currKey.compareTo(val) == 0)
+						ans.add(currRecord);
+					else
+						break;
+
+				}
+			}
+		} else {
+			System.out.println("USING NOTHING");
+			ans = linearSearch(val, colName, "=");
 		}
-		
+		return ans;
+	}
+
+	@SuppressWarnings({ "unchecked", "unused" })
+	public <T extends Comparable<T>> HashSet<Record> selectNotEqual(String colName, T val) throws Exception {
+		HashSet<Record> ans = new HashSet<Record>();
+
+		// int colIndex = getColIdx(colName);
+
+		if (hasIndex(colName)) {
+			System.out.println("USING INDEX");
+			BPTree tree = colNameIndex.get(colName);
+			ans = getRecordsFromRef(tree.searchNotEqual(val));
+		} else {
+			System.out.println("USING NOTHING");
+			ans = linearSearch(val, colName, "!=");
+		}
+		return ans;
+	}
+
+	@SuppressWarnings({ "unchecked", "unused" })
+	public <T extends Comparable<T>> HashSet<Record> selectGreaterThan(String colName, T val) throws Exception {
+		HashSet<Record> ans = new HashSet<Record>();
+
+		// int colIndex = getColIdx(colName);
+
+		if (hasIndex(colName)) {
+			System.out.println("USING INDEX");
+			BPTree tree = colNameIndex.get(colName);
+			ans = getRecordsFromRef(tree.searchGreaterThan(val));
+		} else if (colName.equals(getClusteringKey())) {
+			System.out.println("USING CLUSTRING KEY");
+			Hashtable<String, Object> t = new Hashtable<String, Object>();
+			t.put(colName, val);
+			int[] a = BinarySearch(t);
+			int startPage = a[0];
+			int startIdx = a[1];
+			String type = this.columnTypes.get(colName).trim();
+			for (int i = startPage; i < pagesDirectory.size(); i++) {
+				Page p = deserialize(pagesDirectory.get(i));
+				Vector<Record> pageRecords = p.getRecords();
+				for (int j = startIdx; j < pageRecords.size(); j++) {
+					Record currRecord = pageRecords.get(j);
+					Comparable currKey = getComparable(currRecord.get(getColIdx(colName)), type);
+					if (currKey.compareTo(val) > 0)
+						ans.add(currRecord);
+
+				}
+			}
+		} else {
+			System.out.println("USING NOTHING");
+			ans = linearSearch(val, colName, ">");
+		}
+		return ans;
+	}
+
+	@SuppressWarnings({ "unchecked", "unused" })
+	public <T extends Comparable<T>> HashSet<Record> selectGreaterThanOrEqual(String colName, T val) throws Exception {
+		HashSet<Record> ans = new HashSet<Record>();
+
+		// int colIndex = getColIdx(colName);
+
+		if (hasIndex(colName)) {
+			System.out.println("USING INDEX");
+			BPTree tree = colNameIndex.get(colName);
+			ans = getRecordsFromRef(tree.searchGreaterThanOrEqual(val));
+		} else if (colName.equals(getClusteringKey())) {
+			System.out.println("USING CLUSTRING KEY");
+			Hashtable<String, Object> t = new Hashtable<String, Object>();
+			t.put(colName, val);
+			int[] a = BinarySearch(t);
+			int startPage = a[0];
+			int startIdx = a[1];
+			String type = this.columnTypes.get(colName).trim();
+			for (int i = startPage; i < pagesDirectory.size(); i++) {
+				Page p = deserialize(pagesDirectory.get(i));
+				Vector<Record> pageRecords = p.getRecords();
+				for (int j = startIdx; j < pageRecords.size(); j++) {
+					Record currRecord = pageRecords.get(j);
+					Comparable currKey = getComparable(currRecord.get(getColIdx(colName)), type);
+					if (currKey.compareTo(val) >= 0)
+						ans.add(currRecord);
+					else
+						System.out.println("ERROR OCCOURED!");
+
+				}
+			}
+		} else {
+			System.out.println("USING NOTHING");
+			ans = linearSearch(val, colName, ">=");
+		}
+		return ans;
+	}
+
+	@SuppressWarnings({ "unchecked", "unused" })
+	public <T extends Comparable<T>> HashSet<Record> selectSmallerThan(String colName, T val) throws Exception {
+		HashSet<Record> ans = new HashSet<Record>();
+
+		// int colIndex = getColIdx(colName);
+
+		if (hasIndex(colName)) {
+			System.out.println("USING INDEX");
+			BPTree tree = colNameIndex.get(colName);
+			ans = getRecordsFromRef(tree.searchSmallerThan(val));
+		} else if (colName.equals(getClusteringKey())) {
+			System.out.println("USING CLUSTRING KEY");
+			Hashtable<String, Object> t = new Hashtable<String, Object>();
+			t.put(colName, val);
+
+			String type = this.columnTypes.get(colName).trim();
+			for (int i = 0; i < pagesDirectory.size(); i++) {
+				Page p = deserialize(pagesDirectory.get(i));
+				Vector<Record> pageRecords = p.getRecords();
+				for (int j = 0; j < pageRecords.size(); j++) {
+					Record currRecord = pageRecords.get(j);
+					Comparable currKey = getComparable(currRecord.get(getColIdx(colName)), type);
+					if (currKey.compareTo(val) < 0)
+						ans.add(currRecord);
+					else
+						break;
+
+				}
+			}
+		} else {
+			System.out.println("USING NOTHING");
+			ans = linearSearch(val, colName, "<");
+		}
+		return ans;
+	}
+
+	@SuppressWarnings({ "unchecked", "unused" })
+	public <T extends Comparable<T>> HashSet<Record> selectSmallerThanOrEqual(String colName, T val) throws Exception {
+		HashSet<Record> ans = new HashSet<Record>();
+
+		// int colIndex = getColIdx(colName);
+
+		if (hasIndex(colName)) {
+			System.out.println("USING INDEX");
+			BPTree tree = colNameIndex.get(colName);
+			ans = getRecordsFromRef(tree.searchSmallerThanOrEqual(val));
+		} else if (colName.equals(getClusteringKey())) {
+			System.out.println("USING CLUSTRING KEY");
+			Hashtable<String, Object> t = new Hashtable<String, Object>();
+			t.put(colName, val);
+
+			String type = this.columnTypes.get(colName).trim();
+			for (int i = 0; i < pagesDirectory.size(); i++) {
+				Page p = deserialize(pagesDirectory.get(i));
+				Vector<Record> pageRecords = p.getRecords();
+				for (int j = 0; j < pageRecords.size(); j++) {
+					Record currRecord = pageRecords.get(j);
+					Comparable currKey = getComparable(currRecord.get(getColIdx(colName)), type);
+					if (currKey.compareTo(val) <= 0)
+						ans.add(currRecord);
+					else
+						break;
+
+				}
+			}
+		} else {
+			System.out.println("USING NOTHING");
+			ans = linearSearch(val, colName, "<=");
+		}
+		return ans;
+	}
+
+	public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws Exception {
+		HashSet<Record> set = new HashSet<Record>();
+		// TO DO check if the array size equal zero
+		set = selectOnOneCol(arrSQLTerms[0]);
+		if (arrSQLTerms.length - 1 != strarrOperators.length)
+			throw new DBAppException("Invalid syntax format!");
+		for (int i = 1; i < arrSQLTerms.length; i++) {
+			HashSet<Record> temp = selectOnOneCol(arrSQLTerms[i]);
+			switch (strarrOperators[i - 1]) {
+			case "AND":
+				set = and(set, temp);
+				break;
+			case "OR":
+				set = or(set, temp);
+				break;
+			case "XOR":
+				set = xor(set, temp);
+				break;
+
+			default:
+				throw new DBAppException("Invalid connector!!!!");
+			}
+		}
+		return set.iterator();
+
+	}
+
+	private HashSet<Record> selectOnOneCol(SQLTerm sqlTerm) throws Exception {
+		String colName = sqlTerm.get_strColumnName();
+		Comparable val = (Comparable) sqlTerm.get_objValue();
+		String op = sqlTerm.get_strOperator();
+		HashSet<Record> set = new HashSet<Record>();
+
+		switch (op) {
+		case "=":
+			set = selectEqual(colName, val);
+			break;
+		case ">":
+			set = selectGreaterThan(colName, val);
+			break;
+		case ">=":
+			set = selectGreaterThanOrEqual(colName, val);
+			break;
+		case "<":
+			set = selectSmallerThan(colName, val);
+			break;
+		case "<=":
+			set = selectSmallerThanOrEqual(colName, val);
+			break;
+		case "!=":
+			set = selectNotEqual(colName, val);
+			break;
+		default:
+			throw new DBAppException("Error invalid operator!!!!");
+		}
+		return set;
 	}
 }

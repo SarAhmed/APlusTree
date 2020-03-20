@@ -89,7 +89,7 @@ public class BPTree<T extends Comparable<T>> implements Serializable {
 		return root.searchSmallerThan(minimumKey, key);
 	}
 
-	public Vector<Ref> notEqual(T key) {
+	public Vector<Ref> searchNotEqual(T key) {
 		System.out.println(minimumKey);
 		if (minimumKey == null)
 			return new Vector<Ref>();
