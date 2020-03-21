@@ -7,9 +7,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -183,12 +185,13 @@ public class Table implements Serializable {
 	private HashSet<Record> linearSearch(Comparable val, String colName, String Op) throws IOException {
 		String type = this.columnTypes.get(colName).trim();
 		HashSet<Record> ans = new HashSet<Record>();
+		int colIdx = getColIdx(colName);
 		for (int i = 0; i < pagesDirectory.size(); i++) {
 			Page p = deserialize(pagesDirectory.get(i));
 			Vector<Record> pageRecords = p.getRecords();
 			for (int j = 0; j < pageRecords.size(); j++) {
 				Record currRecord = pageRecords.get(j);
-				Comparable currKey = getComparable(currRecord.get(getColIdx(colName)), type);
+				Comparable currKey = getComparable(currRecord.get(colIdx), type);
 				switch (Op) {
 				case "=":
 					if (currKey.compareTo(val) == 0)
@@ -444,6 +447,18 @@ public class Table implements Serializable {
 			int colIdx = getColIdx(colName);
 			Comparable key = (Comparable) r.get(colIdx);
 			tree.insert(key, ref);
+
+		}
+	}
+
+	private void deleteRecordFromIndex(Record r, Ref ref) throws IOException {
+
+		for (Entry e : colNameIndex.entrySet()) {
+			String colName = (String) e.getKey();
+			BPTree tree = (BPTree) e.getValue();
+			int colIdx = getColIdx(colName);
+			Comparable key = (Comparable) r.get(colIdx);
+			tree.delete(key, ref);
 
 		}
 	}
@@ -734,6 +749,7 @@ public class Table implements Serializable {
 					Record currRecord = p.get(k);
 					if (matchRecord(currRecord, htblColNameValue)) {
 						// System.out.println("there is a match");
+						deleteRecordFromIndex(currRecord, new Ref(pagesDirectory.get(i), currRecord.getId()));
 						p.remove(k--);
 					}
 				}
@@ -772,6 +788,8 @@ public class Table implements Serializable {
 					Record currRecord = p.get(k);
 					if (matchRecord(currRecord, htblColNameValue)) {
 						// System.out.println("there is a match");
+						deleteRecordFromIndex(currRecord, new Ref(pagesDirectory.get(i), currRecord.getId()));
+
 						p.remove(k--);
 					}
 				}
@@ -874,8 +892,35 @@ public class Table implements Serializable {
 		return r;
 	}
 
+	public void updateMetaFile(String colName) throws IOException {
+		FileReader fileReader = new FileReader(directory + "../data/" + "/metadata.csv");
+		StringBuilder write = new StringBuilder();
+		BufferedReader bufferedReader = new BufferedReader(fileReader);
+		String line = "";
+		write.append(bufferedReader.readLine() + "\n"); // To discard first line [Table Name, Column Name, Column Type,
+														// Key, Indexed]
+		while ((line = bufferedReader.readLine()) != null) {
+			String[] metaFile = line.split(", ");
+			if (metaFile[0].equals(this.tableName) && metaFile[1].equals(colName)) {
+				line = this.tableName + ", " + colName + ", " + columnTypes.get(colName) + ", "
+						+ (colName == this.getClusteringKey() ? "True" : "False") + ", " + "True";
+			}
+			write.append(line + "\n");
+
+		}
+		File metadata = new File("" + "data/" + "/metadata.csv");
+
+		PrintWriter pr = new PrintWriter(new FileWriter(metadata));
+		pr.append(write.toString());
+		pr.flush();
+		pr.close();
+		bufferedReader.close();
+
+	}
+
 	/**
 	 * create index on specified column name by creating BPTree on that column and
+	 * 
 	 * inserting in it.
 	 * 
 	 * @param strColName The name of the column which index is created on
@@ -887,9 +932,16 @@ public class Table implements Serializable {
 	 *                                format
 	 */
 	// TO DO update metadata
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void createIndex(String strColName)
 			throws DBAppException, FileNotFoundException, IOException, ClassNotFoundException {
+	
+		if(!columnTypes.containsKey(strColName)) {
+			throw new DBAppException("there is no column with this name");
+		}
+		
+		updateMetaFile(strColName);
 		String type = columnTypes.get(strColName);
 		int colPos = this.getColIdx(strColName);
 		BPTree tree = null;
@@ -1037,6 +1089,8 @@ public class Table implements Serializable {
 			for (int i = startPage; i < pagesDirectory.size(); i++) {
 				Page p = deserialize(pagesDirectory.get(i));
 				Vector<Record> pageRecords = p.getRecords();
+				if (i != startPage)
+					startIdx = 0;
 				for (int j = startIdx; j < pageRecords.size(); j++) {
 					Record currRecord = pageRecords.get(j);
 					Comparable currKey = getComparable(currRecord.get(getColIdx(colName)), type);
@@ -1092,6 +1146,9 @@ public class Table implements Serializable {
 			for (int i = startPage; i < pagesDirectory.size(); i++) {
 				Page p = deserialize(pagesDirectory.get(i));
 				Vector<Record> pageRecords = p.getRecords();
+				if (i != startPage) {
+					startIdx = 0;
+				}
 				for (int j = startIdx; j < pageRecords.size(); j++) {
 					Record currRecord = pageRecords.get(j);
 					Comparable currKey = getComparable(currRecord.get(getColIdx(colName)), type);
@@ -1128,6 +1185,9 @@ public class Table implements Serializable {
 			for (int i = startPage; i < pagesDirectory.size(); i++) {
 				Page p = deserialize(pagesDirectory.get(i));
 				Vector<Record> pageRecords = p.getRecords();
+				if (i != startPage) {
+					startIdx = 0;
+				}
 				for (int j = startIdx; j < pageRecords.size(); j++) {
 					Record currRecord = pageRecords.get(j);
 					Comparable currKey = getComparable(currRecord.get(getColIdx(colName)), type);
@@ -1157,8 +1217,8 @@ public class Table implements Serializable {
 			ans = getRecordsFromRef(tree.searchSmallerThan(val));
 		} else if (colName.equals(getClusteringKey())) {
 			System.out.println("USING CLUSTRING KEY");
-			Hashtable<String, Object> t = new Hashtable<String, Object>();
-			t.put(colName, val);
+//			Hashtable<String, Object> t = new Hashtable<String, Object>();
+//			t.put(colName, val);
 
 			String type = this.columnTypes.get(colName).trim();
 			for (int i = 0; i < pagesDirectory.size(); i++) {
@@ -1225,7 +1285,7 @@ public class Table implements Serializable {
 			throw new DBAppException("Invalid syntax format!");
 		for (int i = 1; i < arrSQLTerms.length; i++) {
 			HashSet<Record> temp = selectOnOneCol(arrSQLTerms[i]);
-			switch (strarrOperators[i - 1]) {
+			switch (strarrOperators[i - 1].toUpperCase().trim()) {
 			case "AND":
 				set = and(set, temp);
 				break;

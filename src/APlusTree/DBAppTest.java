@@ -11,6 +11,8 @@ public class DBAppTest {
 
 	public static void main(String[] args) throws Exception {
 		DBApp db = new DBApp();
+		//testInsert(db);
+		//System.out.println(db.displayTable("Ahmed"));
 
 //		Hashtable<String, Object> htblColNameValue = new Hashtable();
 //		testUpdate(db);
@@ -36,10 +38,23 @@ public class DBAppTest {
 //		db.insertIntoTable("Ahmed", htblColNameValue);
 //		testInsert(db);
 		
-		System.out.println(db.displayTable("Ahmed"));
-		db.createBTreeIndex("Ahmed", "name");
-		System.out.println("----------------------------------------------------------------test");
-		select(db);
+//		System.out.println(db.displayTable("Ahmed"));
+//		Hashtable<String, Object> htblColNameValue = new Hashtable();
+		db.createBTreeIndex("Ahmed", "kkkkk");
+//		htblColNameValue.put("id", new Integer(70));
+//		htblColNameValue.put("name", new String("AliXMen"));
+//		htblColNameValue.put("Bola", 12.0);
+//		htblColNameValue.put("gpa", new Integer(40));
+//		htblColNameValue.put("EntryDate", new Date());
+//		int [] a = {12,13,14,12};
+//		int [] b = {35,36,37,35};
+//		int [] c= {12,23};
+//		htblColNameValue.put("poly", new Polygon( a,b,2));
+//		db.insertIntoTable("Ahmed", htblColNameValue);
+//
+//	
+//		System.out.println("----------------------------------------------------------------test");
+//		select(db);
 
 	}
 
@@ -59,7 +74,7 @@ public class DBAppTest {
 		db.createTable(tableName, "id", htblColNameType);
 		Random rnd = new Random();
 
-		for (int i = 0; i < 52; i++) {
+		for (int i = 0; i < 100; i++) {
 			Hashtable<String, Object> htblColNameValue = new Hashtable();
 			int id = rnd.nextInt(10);
 			htblColNameValue.put("id", new Integer(id));
@@ -111,9 +126,9 @@ public class DBAppTest {
 
 	public static void select(DBApp db) throws Exception {
 		String tableName = "Ahmed";
-		String columnName = "gpa";
+		String columnName = "id";
 		String opreator = "=";
-		Object val = 97;
+		Object val = 40;
 		SQLTerm arr[] = new SQLTerm[2];
 		String operator []= {"XOR"};
 
@@ -121,7 +136,7 @@ public class DBAppTest {
 		
 		columnName = "name";
 		opreator = "=";
-		val = "Ali1";
+		val = "AliXMen";
 		arr[1] = new SQLTerm(tableName, columnName, opreator, val);
 		 Iterator itr = db.selectFromTable(arr, operator);
 		 

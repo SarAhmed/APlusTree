@@ -13,7 +13,7 @@ public class TestBPTree {
 			int x = sc.nextInt();
 			if (x == -1)
 				break;
-			Ref ref = new Ref(1, i++);
+			Ref ref = new Ref(1,(long) i++);
 			tree.insert(x, ref);
 			System.out.println(tree.toString());
 		}
