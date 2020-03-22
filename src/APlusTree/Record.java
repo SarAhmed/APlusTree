@@ -1,9 +1,8 @@
 package APlusTree;
 import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Vector;
+import java.util.*;
+
+import static java.util.Objects.hash;
 
 public class Record implements Serializable{
 
@@ -56,11 +55,22 @@ public class Record implements Serializable{
 		//System.out.println("I am using hascode");
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((vals == null) ? 0 : vals.hashCode());
+		result = prime * result + ((vals == null) ? 0 : vals.hashCode()) + hash(getId());
 		return result;
 	}
-	
+
 	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof Record)) return false;
+		Record record = (Record) o;
+	//	System.out.println(getId() == record.getId());
+		return getId() == record.getId() &&
+				vals.equals(record.vals);
+	}
+
+
+/*@Override
 	public boolean equals(Object obj) {
 	//	System.out.println("I am using equal");
 
@@ -79,11 +89,26 @@ public class Record implements Serializable{
 			return false;
 		}
 		return true;
-	}
+	}*/
 
 	public static void main(String[] args) {
 		String s1 =new String("sarah");
 		String s2=new String("sarah");
-		System.out.println(s1==s2);
+		//System.out.println(s1==s2);
+		Record r1 = new Record();
+		r1.vals.add(new Integer(1));
+		Record r2 = new Record();
+		r2.vals.add(new Integer(1));
+		HashSet<Record> a = new HashSet<>();
+		a.add(r1);
+	//	System.out.println(r1.hashCode() == r2.hashCode());
+
+	//	System.out.println(hash(r1.hashCode()) == hash(r2.hashCode()));
+		//HashMap<Integer ,Record> map = new HashMap<>();
+	//	map.put(hash(r1),r1);
+	//	System.out.println(a.contains(r2));
+		Vector<Object> d1 = new Vector<>(); d1.add(new Integer(1));
+		Vector<Object> d2 = new Vector<>(); d2.add(new Integer(1));
+		System.out.println(d1.equals(d2));
 	}
 }

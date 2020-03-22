@@ -2,17 +2,16 @@ package APlusTree;
 
 import java.awt.Polygon;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Random;
+import java.util.*;
+
+import static APlusTree.Table.and;
 
 public class DBAppTest {
 
 	public static void main(String[] args) throws Exception {
 		DBApp db = new DBApp();
 		//testInsert(db);
-		//System.out.println(db.displayTable("Ahmed"));
+		System.out.println(db.displayTable("Ahmed"));
 
 //		Hashtable<String, Object> htblColNameValue = new Hashtable();
 //		testUpdate(db);
@@ -39,8 +38,8 @@ public class DBAppTest {
 //		testInsert(db);
 		
 //		System.out.println(db.displayTable("Ahmed"));
-//		Hashtable<String, Object> htblColNameValue = new Hashtable();
-		db.createBTreeIndex("Ahmed", "kkkkk");
+//		Hashtable<String, Object> htblColNameValue = new Hashtable();s
+//		db.createBTreeIndex("Ahmed", "kkkkk");
 //		htblColNameValue.put("id", new Integer(70));
 //		htblColNameValue.put("name", new String("AliXMen"));
 //		htblColNameValue.put("Bola", 12.0);
@@ -53,8 +52,39 @@ public class DBAppTest {
 //		db.insertIntoTable("Ahmed", htblColNameValue);
 //
 //	
-//		System.out.println("----------------------------------------------------------------test");
-//		select(db);
+		System.out.println("----------------------------------------------------------------test");
+		Table a = db.getTable("Ahmed");
+		//a.selectEqual("id",9);
+		//System.out.println(a.selectEqual("id",9).size());
+		HashSet<Record> a1 = a.selectEqual("id",9);
+		//System.out.println(a.selectEqual("name","Ali9").size());
+		HashSet<Record> b1 = a.selectEqual("name","Ali9");
+	//	System.out.println(and(a1,b1).size());
+		Record r1 = null , r2 =null;
+		/*for (Record r: a1) {
+			if(b1.contains(r)){System.out.println("here*****22******");}
+		//	System.out.println(r.toString()+ "*********"+r.getId());
+		//	if (r.getId() == 77) r1 = r ;
+		}*/
+	//	System.out.println("***************************************************");
+		System.out.println();
+		for (Record r: b1) {
+		//	System.out.print(r.hashCode()+"****");
+		//	System.out.println(r.toString()+"********"+r.getId());
+			if (r.getId() == 77) r2 = r ;
+		}
+		//System.out.println(r1.getValues().equals(r2.getValues()));
+	//	System.out.println(r2.getValues().toString());
+		/*Vector<Object> v1 = r1.getValues() , v2 = r2.getValues();
+		Iterator<Object> t1 = v1.iterator() , t2 = v2.iterator();
+		while (t1.hasNext() && t2.hasNext()){
+			Object w1 = t1.next() , w2 = t2.next();
+			System.out.println(w1+"   "+w2+"  "+w1.equals(w2));
+		}*/
+		/*Double d1 = new Double(2.0);
+		Double d2 = new Double(2.0);
+		System.out.println(d1.hashCode() == d2.hashCode());*/
+		//select(db);
 
 	}
 
@@ -128,15 +158,15 @@ public class DBAppTest {
 		String tableName = "Ahmed";
 		String columnName = "id";
 		String opreator = "=";
-		Object val = 40;
+		Object val = 9;
 		SQLTerm arr[] = new SQLTerm[2];
-		String operator []= {"XOR"};
+		String operator []= {"OR"};
 
 		arr[0] = new SQLTerm(tableName, columnName, opreator, val);
 		
 		columnName = "name";
 		opreator = "=";
-		val = "AliXMen";
+		val = "Ali9";
 		arr[1] = new SQLTerm(tableName, columnName, opreator, val);
 		 Iterator itr = db.selectFromTable(arr, operator);
 		 

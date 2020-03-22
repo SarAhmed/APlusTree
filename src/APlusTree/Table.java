@@ -985,56 +985,33 @@ public class Table implements Serializable {
 	}
 
 	private static HashSet<Record> and(HashSet<Record> a, HashSet<Record> b) {
-		HashSet<Record> ans = new HashSet<Record>();
-		// System.out.println("I am in AND");
-		for (Record r : a) {
-			for (Record f : b) {
-				if (r.equals(f))
-					ans.add(r);
-			}
+		HashSet<Record> ans=new HashSet<Record>();
+		for(Record r:a) {
+			if(b.contains(r))ans.add(r);
 		}
-		/*
-		 * for (Record r : b) { System.out.println("I am a B record "+r);
-		 * //System.out.println(a.equals(b)?
-		 * "wohoooooooooooooooooooooooooooooooooooooooo!":"false"); if (a.contains(r))
-		 * ans.add(r); }
-		 */
+		for(Record r:b) {
+			if(a.contains(r))ans.add(r);
+		}
 		return ans;
 
 	}
 
 	private static HashSet<Record> or(HashSet<Record> a, HashSet<Record> b) {
-		HashSet<Record> ans = new HashSet<Record>();
-		ans.addAll(a);
-		all: for (Record r : b) {
-			for (Record f : a)
-				if (r.equals(f))
-					continue all;
-
-			ans.add(r);
-
+		for(Record r:b) {
+			if(!a.contains(r)) a.add(r);
 		}
-		return ans;
+		return a;
 
 	}
 
 	private static HashSet<Record> xor(HashSet<Record> a, HashSet<Record> b) {
-		HashSet<Record> ans = new HashSet<Record>();
-		all: for (Record r : b) {
-			for (Record f : a)
-				if (r.equals(f))
-					continue all;
-
-			ans.add(r);
-
+		HashSet<Record> ans=new HashSet<Record>();
+		for(Record r:a) {
+			if(!b.contains(r)){ans.add(r);System.out.println("1st loop*******************");
+			}
 		}
-		all: for (Record r : a) {
-			for (Record f : b)
-				if (r.equals(f))
-					continue all;
-
-			ans.add(r);
-
+		for(Record r:b) {
+			if(!a.contains(r)){ans.add(r);System.out.println("2nd loop******************");}
 		}
 		return ans;
 

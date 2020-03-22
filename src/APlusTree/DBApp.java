@@ -79,7 +79,7 @@ public class DBApp {
 
 	}
 
-	private Table getTable(String strTableName) throws FileNotFoundException, IOException, ClassNotFoundException {
+	public Table getTable(String strTableName) throws FileNotFoundException, IOException, ClassNotFoundException {
 		File tableFile = new File(DataBaseDir + "data/" + strTableName + ".class");
 		if (!tableFile.exists())
 			return null;

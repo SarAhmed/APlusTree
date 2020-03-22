@@ -13,8 +13,8 @@ public class TestBPTree {
 			int x = sc.nextInt();
 			if (x == -1)
 				break;
-			Ref ref = new Ref(1,(long) i++);
-			tree.insert(x, ref);
+		//	Ref ref = new Ref(1,(long) i++);
+		//	tree.insert(x, ref);
 			System.out.println(tree.toString());
 		}
 		while (true) {
@@ -23,11 +23,11 @@ public class TestBPTree {
 			int newKey =sc.nextInt();
 			if (key == -1)
 				break;
-			Ref ref = new Ref(1, idx);
+		//	Ref ref = new Ref(1, idx);
 
 //			tree.delete(x,ref);
 			
-			tree.update(key, ref, newKey);;
+		//	tree.update(key, ref, newKey);;
 			System.out.println(tree.toString());
 			System.out.println("-----------------------------------------");
 		}
