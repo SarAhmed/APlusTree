@@ -51,13 +51,14 @@ private static Polygon getPolygon(String s) {
 		if (this == o) return true;
 		if (!(o instanceof DBPolygon)) return false;
 		DBPolygon dbPolygon = (DBPolygon) o;
-		return curID == dbPolygon.curID && Arrays.equals(dbPolygon.polygon.ypoints,this.polygon.ypoints) &&
+		return  Arrays.equals(dbPolygon.polygon.ypoints,this.polygon.ypoints) &&
 				Arrays.equals(dbPolygon.polygon.xpoints,this.polygon.xpoints) && dbPolygon.polygon.npoints == (this.polygon.npoints) ;
 	}
 
 	@Override
 	public int hashCode() {
-		return Arrays.hashCode(polygon.xpoints) + Arrays.hashCode(polygon.ypoints) + hash(polygon.npoints , curID);
+		return Arrays.hashCode(polygon.xpoints) + Arrays.hashCode(polygon.ypoints) + hash(polygon.npoints);
+		//return hash(polygon , getID());
 	}
 
 	/*@Override

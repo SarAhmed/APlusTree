@@ -639,7 +639,10 @@ public class Table implements Serializable {
 		String type = "";
 		for (int i = 0; i < tableInfo.size(); i++) {
 			if (tableInfo.get(i)[3].trim().equals("True")) {
+				//System.out.println(tableInfo.get(i)[3].trim()+"&&&&&&&&&&&&");
+				//System.out.println("da5lt goua 2ul if");
 				type = tableInfo.get(i)[2].trim();
+			//	System.out.println(type);
 				if (type.equals("java.lang.Integer")) {
 					searchKey = Integer.parseInt(strClusteringKey);
 				} else if (type.equals("java.lang.String")) {
@@ -647,7 +650,9 @@ public class Table implements Serializable {
 				} else if (type.equals("java.lang.Double")) {
 					searchKey = Double.parseDouble(strClusteringKey);
 				} else if (type.equals("java.awt.Polygon")) {
+					//System.out.println("I am in else");
 					searchKey = new DBPolygon(strClusteringKey);
+				//	System.out.println("search key is null?"+searchKey==null);
 				} else if (type.equals("java.util.Date")) {
 					searchKey = strToDateParser(strClusteringKey);
 				} else if (type.equals("java.lang.Boolean")) {
@@ -657,10 +662,26 @@ public class Table implements Serializable {
 				break;
 			}
 		}
+		int i = 0;
+		if (hasIndex(this.getClusteringKey())) {
+			BPTree tree = colNameIndex.get(getClusteringKey());
+			Vector<Ref> ref = tree.search(searchKey);
+			pagesDirectory.indexOf(ref.get(0).getPageDirectory());
+			if (ref == null || ref.size() == 0)
+				return true;
+			String minDir = ref.get(0).getPageDirectory();
+			for (Ref r : ref) {
+				String dir = r.getPageDirectory();
+				if ((dir).compareTo(minDir) < 0)
+					minDir = dir;
+			}
+			i = pagesDirectory.indexOf(minDir);
+
+		}
 
 		boolean stop = false;
 		boolean binaryUsed = false;
-		for (int i = 0; i < pagesDirectory.size() && !stop; i++) {
+		for (; i < pagesDirectory.size() && !stop; i++) {
 			Page p = deserialize(pagesDirectory.get(i));
 			Record lastRecord = p.get(p.size() - 1);
 			Comparable lastRecordKey = getComparable(lastRecord.get(keyIdx), type);
@@ -670,6 +691,7 @@ public class Table implements Serializable {
 
 			Vector<Record> pageRecords = p.getRecords();
 			int updateIdx = 0;
+
 			if (!binaryUsed) {
 				updateIdx = BSVector(pageRecords, searchKey, keyIdx, type);
 				binaryUsed = true;
@@ -677,8 +699,6 @@ public class Table implements Serializable {
 
 			boolean updated = false;
 
-			// let pageidx 2li
-			// let BSidx
 			for (int k = updateIdx; k < p.size(); k++) {
 				Record currRecord = p.get(k);
 
@@ -814,8 +834,8 @@ public class Table implements Serializable {
 		for (int i = 0; i < header.length - 1; i++) {
 			if (htblColNameValue.containsKey(header[i].trim())) {
 				Vector<Object> r = record.getValues();
-
-				if (!htblColNameValue.get(header[i].trim()).equals(r.get(i)))
+//Changed the .equals to comapreTO
+				if (((Comparable) htblColNameValue.get(header[i].trim())).compareTo((Comparable) r.get(i)) != 0)
 					return false;
 			}
 		}
@@ -903,7 +923,7 @@ public class Table implements Serializable {
 			String[] metaFile = line.split(", ");
 			if (metaFile[0].equals(this.tableName) && metaFile[1].equals(colName)) {
 				line = this.tableName + ", " + colName + ", " + columnTypes.get(colName) + ", "
-						+ (colName == this.getClusteringKey() ? "True" : "False") + ", " + "True";
+						+ (colName.equals( this.getClusteringKey()) ? "True" : "False") + ", " + "True";
 			}
 			write.append(line + "\n");
 
@@ -936,20 +956,20 @@ public class Table implements Serializable {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void createIndex(String strColName)
 			throws DBAppException, FileNotFoundException, IOException, ClassNotFoundException {
-	
-		if(!columnTypes.containsKey(strColName)) {
+
+		if (!columnTypes.containsKey(strColName)) {
 			throw new DBAppException("there is no column with this name");
 		}
-		
+
 		updateMetaFile(strColName);
 		String type = columnTypes.get(strColName);
 		int colPos = this.getColIdx(strColName);
 		BPTree tree = null;
-		System.out.println(type);
+	//	System.out.println(type);
 		if (type.equals("java.lang.Integer")) {
-			System.out.println("goua 2l if");
+		//	System.out.println("goua 2l if");
 			tree = new BPTree<Integer>(NodeSize);
-			System.out.println(tree.toString());
+			//System.out.println(tree.toString());
 		} else if (type.equals("java.lang.String")) {
 			tree = new BPTree<String>(NodeSize);
 		} else if (type.equals("java.lang.Double")) {
@@ -984,34 +1004,39 @@ public class Table implements Serializable {
 		this.save();
 	}
 
-	private static HashSet<Record> and(HashSet<Record> a, HashSet<Record> b) {
-		HashSet<Record> ans=new HashSet<Record>();
-		for(Record r:a) {
-			if(b.contains(r))ans.add(r);
+	public static HashSet<Record> and(HashSet<Record> a, HashSet<Record> b) {
+		HashSet<Record> ans = new HashSet<Record>();
+		for (Record r : a) {
+			if (b.contains(r))
+				ans.add(r);
 		}
-		for(Record r:b) {
-			if(a.contains(r))ans.add(r);
-		}
+//		for(Record r:b) {
+//			if(a.contains(r))ans.add(r);
+//		}
 		return ans;
 
 	}
 
 	private static HashSet<Record> or(HashSet<Record> a, HashSet<Record> b) {
-		for(Record r:b) {
-			if(!a.contains(r)) a.add(r);
+		for (Record r : b) {
+			a.add(r);
+			// if(!a.contains(r))
 		}
 		return a;
 
 	}
 
 	private static HashSet<Record> xor(HashSet<Record> a, HashSet<Record> b) {
-		HashSet<Record> ans=new HashSet<Record>();
-		for(Record r:a) {
-			if(!b.contains(r)){ans.add(r);System.out.println("1st loop*******************");
+		HashSet<Record> ans = new HashSet<Record>();
+		for (Record r : a) {
+			if (!b.contains(r)) {
+				ans.add(r);
 			}
 		}
-		for(Record r:b) {
-			if(!a.contains(r)){ans.add(r);System.out.println("2nd loop******************");}
+		for (Record r : b) {
+			if (!a.contains(r)) {
+				ans.add(r);
+			}
 		}
 		return ans;
 

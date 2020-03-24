@@ -1,5 +1,7 @@
 package APlusTree;
 
+import java.awt.Polygon;
+
 public class SQLTerm {
 
 	private String _strTableName ;
@@ -12,6 +14,8 @@ public class SQLTerm {
 		this._strTableName = tableName;
 		this._strColumnName = columnName;
 		this._strOperator = opreator;
+		if(val instanceof Polygon)
+			val=new DBPolygon((Polygon)val);
 		this._objValue = val ;
 	}
 
