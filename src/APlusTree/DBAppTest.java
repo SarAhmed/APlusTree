@@ -10,11 +10,36 @@ public class DBAppTest {
 
 	public static void main(String[] args) throws Exception {
 		DBApp db = new DBApp();
-		// testInsert(db);
-
+//	 testInsert(db);
 		Hashtable<String, Object> htblColNameValue = new Hashtable();
+//		db.init();
+//		String tableName = "Ahmed";
+//		Hashtable<String, String> htblColNameType = new Hashtable<String, String>();
+//		htblColNameType.put("id", "java.lang.Integer");
+//		
+//		db.createTable(tableName, "id", htblColNameType);
+//		db.createBTreeIndex(tableName, "id");
+//		int[] arr =new int[]{1,3,4,1,2,0,7};
+//		for(int i=0;i<arr.length;i++) {
+//		int id;
+//	
+//		id=arr[i];
+//		htblColNameValue.put("id", id);
+//		db.insertIntoTable("Ahmed", htblColNameValue);
+//		htblColNameValue.clear();
+//		}
+		
+		System.out.println(db.displayTable("Ahmed"));
+		int id=2;
+		htblColNameValue.put("id", id);
+		db.insertIntoTable("Ahmed", htblColNameValue);
+		htblColNameValue.clear();
+		System.out.println(db.displayTable("Ahmed"));
+		
+		
+	//	Hashtable<String, Object> htblColNameValue = new Hashtable();
 //		testUpdate(db);
-		Random rnd = new Random();
+	//	Random rnd = new Random();
 //
 		/*
 		 * int id= 3000; htblColNameValue.put("id", new Integer(id));
@@ -77,20 +102,20 @@ public class DBAppTest {
 		 * System.out.println(d1.hashCode() == d2.hashCode());
 		 */
 		
-		 System.out.println(db.displayTable("Ahmed"));
-		  System.out.println("********************************************************");
-		  
-		  select(db);
-		  System.out.println("********************************************************");
-		  db.createBTreeIndex("Ahmed", "poly");
-		  select(db);
-		  System.out.println("********************************************************");
-		 
-		  testUpdate(db); // testInsert(db); // testDelete(db);
-		 
-		// testInsert(db);
-		// db.createBTreeIndex("Ahmed", "poly");
-		System.out.println(db.displayTable("Ahmed"));
+//		 System.out.println(db.displayTable("Ahmed"));
+//		  System.out.println("********************************************************");
+//		  
+//		  select(db);
+//		  System.out.println("********************************************************");
+	 // db.createBTreeIndex("Ahmed", "poly");
+//		  select(db);
+//		  System.out.println("********************************************************");
+//		 
+//		  testUpdate(db); // testInsert(db); // testDelete(db);
+//		 
+//		// testInsert(db);
+//		// db.createBTreeIndex("Ahmed", "poly");
+//		System.out.println(db.displayTable("Ahmed"));
 
 	}
 
@@ -101,35 +126,26 @@ public class DBAppTest {
 		String tableName = "Ahmed";
 		Hashtable<String, String> htblColNameType = new Hashtable<String, String>();
 		htblColNameType.put("id", "java.lang.Integer");
-		htblColNameType.put("name", "java.lang.String");
-		htblColNameType.put("gpa", "java.lang.Integer");
-		htblColNameType.put("Bola", "java.lang.Double");
-		htblColNameType.put("poly", "java.awt.Polygon");
-		htblColNameType.put("EntryDate", "java.util.Date");
-
-		db.createTable(tableName, "poly", htblColNameType);
+		db.createTable(tableName, "id", htblColNameType);
+		db.createBTreeIndex(tableName,"id");
 
 		Random rnd = new Random();
 
-		for (int i = 0; i < 150; i++) {
+		for (int i = 0; i < 20; i++) {
 			Hashtable<String, Object> htblColNameValue = new Hashtable();
 			int id = rnd.nextInt(10);
 			htblColNameValue.put("id", new Integer(id));
-			htblColNameValue.put("name", new String("Ali" + (id)));
-			htblColNameValue.put("gpa", new Integer(rnd.nextInt(100)));
-			htblColNameValue.put("Bola", rnd.nextDouble());
-			int n = 3 + rnd.nextInt(5);
-			boolean xa = i % 2 == 0;
-			int[] x = new int[n];
-			int[] y = new int[n];
-			for (int j = 0; j < n; j++) {
-				x[j] = rnd.nextInt(10);
-				y[j] = rnd.nextInt(10);
-			}
-			int d = rnd.nextInt(10) + 1;
-			int m = rnd.nextInt(10) + 1;
-			htblColNameValue.put("EntryDate", new Date("2000/" + m + "/" + d));
-			htblColNameValue.put("poly", new Polygon(x, y, n));
+	//		int n = 3 + rnd.nextInt(5);
+//			boolean xa = i % 2 == 0;
+//			int[] x = new int[n];
+//			int[] y = new int[n];
+//			for (int j = 0; j < n; j++) {
+//				x[j] = rnd.nextInt(10);
+//				y[j] = rnd.nextInt(10);
+//			}
+//			int d = rnd.nextInt(10) + 1;
+//			int m = rnd.nextInt(10) + 1;
+//			htblColNameValue.put("poly", new Polygon(x, y, n));
 			db.insertIntoTable("Ahmed", htblColNameValue);
 
 		}

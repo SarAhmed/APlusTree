@@ -46,6 +46,8 @@ public class Record implements Serializable{
 		String s = "";
 		for(Object o: vals)
 			s += o.toString() + ", ";
+		
+		s+=" record id "+id;
 		return s;
 	}
 	

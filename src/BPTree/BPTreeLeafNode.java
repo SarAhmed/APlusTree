@@ -311,8 +311,8 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 * @param index the index of the key to be deleted
 	 */
 	public void deleteAt(int index, Ref ref) {
-		System.out.println("index: " + index + " ref: " + ref);
-		System.out.println("record size: " + records[index].size());
+//		System.out.println("index: " + index + " ref: " + ref);
+//		System.out.println("record size: " + records[index].size());
 		for (int i = 0; i < records[index].size(); i++) {
 		//	String pageDirectory = records[index].get(i).getPageDirectory();
 			Ref recordRef=records[index].get(i);

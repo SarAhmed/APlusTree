@@ -225,7 +225,9 @@ public class Table implements Serializable {
 		return ans;
 	}
 
-	private int[] BinarySearch(Hashtable<String, Object> htblColNameValue) throws Exception {
+	
+
+private int[] BinarySearch(Hashtable<String, Object> htblColNameValue) throws Exception {
 		if (checkValidInput(htblColNameValue)) {
 			String type = this.columnTypes.get(this.getClusteringKey()).trim();
 
@@ -233,10 +235,14 @@ public class Table implements Serializable {
 			String clusteringKey = getClusteringKey();
 
 			Comparable inputKey = getComparable(value, type);
-			// TO DO use DBException not Exception
 			if (inputKey == null)
 				throw new DBAppException(" the type of key is not comparable");
 
+			if(hasIndex(getClusteringKey())) {
+				return searchPosUsingIdx(inputKey);
+			}
+			
+			
 			int pageIdx = -1;
 			int recordIdx = -1;
 			int clusteredIdx = getColIdx(clusteringKey);
@@ -310,7 +316,7 @@ public class Table implements Serializable {
 		throw new DBAppException("invalid input format");
 	}
 
-	static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String type) {
+static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String type) {
 		int lo = 0;
 		int hi = arr.size();
 		while (hi - lo > 0) {
@@ -326,7 +332,46 @@ public class Table implements Serializable {
 		}
 		return hi;
 	}
-
+	
+	private int[] searchPosUsingIdx(Comparable key) throws IOException {
+		BPTree tree =colNameIndex.get(this.getClusteringKey());
+		Vector<Ref> ref =tree.searchGreaterThan(key);
+		int pageIdx=-1,recordIdx=-1;
+		if(ref==null||ref.size()==0) {
+			if(pagesDirectory.size()==0) {
+				pageIdx=0;
+				recordIdx=0;
+			}else {
+				Page p =deserialize(pagesDirectory.get(pagesDirectory.size()-1));
+				if(p.isFull()) {
+					pageIdx=pagesDirectory.size();
+					recordIdx=0;
+				}else {
+					pageIdx=pagesDirectory.size()-1;
+					recordIdx=p.size();
+				}
+			}
+		}else {
+			String minDirectory=ref.get(0).getPageDirectory();
+			for(Ref r: ref) {
+				if(r.getPageDirectory().compareTo(minDirectory)<0) {
+					minDirectory=r.getPageDirectory();
+				}
+			}
+			Page p = deserialize(minDirectory);
+			Vector<Record> records=p.getRecords();
+			int clusteredIdx=getColIdx(getClusteringKey());
+			String type =columnTypes.get(getClusteringKey());
+				
+			pageIdx=pagesDirectory.indexOf(minDirectory);
+			recordIdx=BSVector(records, key, clusteredIdx, type);
+		}
+		int[] result = new int[2];
+		result[0] = pageIdx;
+		result[1] = recordIdx;
+		return result;
+	
+	}
 	public static String getDate() {
 		SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 		Date date = new Date();
@@ -383,25 +428,29 @@ public class Table implements Serializable {
 		int firstPageIdx = pageIdx;
 		for (int i = pageIdx; i < pageDirectorySize && !inserted; i++) {
 			Page p = deserialize(pagesDirectory.get(i));
-
+			
+			/*
+			 * if i = first page then we already have inserted the corresponding keys in the
+			 * indexing data structures otherwise we are just updating the ref of existing
+			 * records(moves from page i to page i+1)
+			 */
+		
+			if (i != firstPageIdx) {
+				updateRecordRef(r, new Ref(pagesDirectory.get(i - 1), r.getId()),
+						new Ref(pagesDirectory.get(i), r.getId()));
+			}
+			
+			
 			if (!(inserted = p.add(r, recordIdx))) {
 
 				Record removedRecord = p.remove(p.size() - 1);
-
+			//	System.out.println("Inserting at index :" +recordIdx);
 				// this for tracing only replace it without if (only addRecord())
 				if (!p.add(r, recordIdx)) {
 					// TO DO remove this case
 					throw new Exception("feh haga 3'lt");
 				}
-				/*
-				 * if i = first page then we already have inserted the corresponding keys in the
-				 * indexing data structures otherwise we are just updating the ref of existing
-				 * records(moves from page i to page i+1)
-				 */
-				if (i != firstPageIdx) {
-					updateRecordRef(r, new Ref(pagesDirectory.get(i - 1), r.getId()),
-							new Ref(pagesDirectory.get(i), r.getId()));
-				}
+				
 				r = removedRecord;
 				recordIdx = 0;
 				pageIdx++;
@@ -528,89 +577,6 @@ public class Table implements Serializable {
 		return col;
 
 	}
-
-	// public boolean updateTable(String strClusteringKey, Hashtable<String, Object>
-	// htblColNameValue)
-	// throws DBAppException, IOException {
-	// // from here i will only make every Polygon as DBPolygon
-	// ArrayList<String> polygonColumns = new ArrayList();
-	// for (Entry<String, Object> e : htblColNameValue.entrySet()) {
-	// if (e.getValue() instanceof Polygon) {
-	// polygonColumns.add(e.getKey());
-	// }
-	// }
-	//
-	// for (String s : polygonColumns) {
-	// Polygon p = (Polygon) htblColNameValue.get(s);
-	// htblColNameValue.put(s, new DBPolygon(p));
-	// }
-	//
-	// // this is the end of making every polygon as DBPolygon
-	//
-	// if (!checkValidInput(htblColNameValue)) {
-	// throw new DBAppException("Invalid Input Format");
-	// }
-	//
-	// int keyIdx = this.getColIdx(getClusteringKey());
-	// ArrayList<String[]> tableInfo = this.getColInfo();
-	// Comparable searchKey = null;
-	// String type = "";
-	// for (int i = 0; i < tableInfo.size(); i++) {
-	// if (tableInfo.get(i)[3].trim().equals("True")) {
-	// type = tableInfo.get(i)[2].trim();
-	// if (type.equals("java.lang.Integer")) {
-	// searchKey = Integer.parseInt(strClusteringKey);
-	// } else if (type.equals("java.lang.String")) {
-	// searchKey = strClusteringKey;
-	// } else if (type.equals("java.lang.Double")) {
-	// searchKey = Double.parseDouble(strClusteringKey);
-	// } else if (type.equals("java.awt.Polygon")) {
-	// searchKey = new DBPolygon(strClusteringKey);
-	// } else if (type.equals("java.util.Date")) {
-	// searchKey = strToDateParser(strClusteringKey);
-	// } else if (type.equals("java.lang.Boolean")) {
-	// searchKey = Boolean.parseBoolean(strClusteringKey);
-	//
-	// }
-	// break;
-	// }
-	// }
-	//
-	// boolean stop = false;
-	// for (int i = 0; i < pagesDirectory.size() && !stop; i++) {
-	// Page p = deserialize(pagesDirectory.get(i));
-	// boolean updated = false;
-	// for (int k = 0; k < p.size(); k++) {
-	// Record currRecord = p.get(k);
-	//
-	// Comparable currKey = getComparable(currRecord.get(keyIdx), type);
-	// if (currKey.compareTo(searchKey) == 0) {
-	// for (Entry<String, Object> entry : htblColNameValue.entrySet()) {
-	// String colName = entry.getKey();
-	// Object value = entry.getValue();
-	// int colIdx = getColIdx(colName);
-	//
-	// currRecord.update(colIdx, value);
-	// updated = true;
-	// }
-	// // TO DO if touchDate is in MetaData => add to htblColNames.add(String
-	// // touchDate,getDate) at the begning of the method
-	// if (updated) {
-	// currRecord.update(currRecord.getValues().size() - 1, getDate());
-	// }
-	//
-	// } else if (currKey.compareTo(searchKey) > 0) {
-	// stop = true;
-	// break;
-	// }
-	// }
-	// if (updated) {
-	// p.save();
-	// }
-	// }
-	//
-	// return true;
-	// }
 
 	public boolean updateTableBS(String strClusteringKey, Hashtable<String, Object> htblColNameValue)
 			throws DBAppException, IOException {
