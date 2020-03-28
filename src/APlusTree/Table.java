@@ -225,9 +225,7 @@ public class Table implements Serializable {
 		return ans;
 	}
 
-	
-
-private int[] BinarySearch(Hashtable<String, Object> htblColNameValue) throws Exception {
+	private int[] BinarySearch(Hashtable<String, Object> htblColNameValue) throws Exception {
 		if (checkValidInput(htblColNameValue)) {
 			String type = this.columnTypes.get(this.getClusteringKey()).trim();
 
@@ -238,11 +236,10 @@ private int[] BinarySearch(Hashtable<String, Object> htblColNameValue) throws Ex
 			if (inputKey == null)
 				throw new DBAppException(" the type of key is not comparable");
 
-			if(hasIndex(getClusteringKey())) {
+			if (hasIndex(getClusteringKey())) {
 				return searchPosUsingIdx(inputKey);
 			}
-			
-			
+
 			int pageIdx = -1;
 			int recordIdx = -1;
 			int clusteredIdx = getColIdx(clusteringKey);
@@ -316,7 +313,7 @@ private int[] BinarySearch(Hashtable<String, Object> htblColNameValue) throws Ex
 		throw new DBAppException("invalid input format");
 	}
 
-static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String type) {
+	static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String type) {
 		int lo = 0;
 		int hi = arr.size();
 		while (hi - lo > 0) {
@@ -332,46 +329,47 @@ static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String
 		}
 		return hi;
 	}
-	
+
 	private int[] searchPosUsingIdx(Comparable key) throws IOException {
-		BPTree tree =colNameIndex.get(this.getClusteringKey());
-		Vector<Ref> ref =tree.searchGreaterThan(key);
-		int pageIdx=-1,recordIdx=-1;
-		if(ref==null||ref.size()==0) {
-			if(pagesDirectory.size()==0) {
-				pageIdx=0;
-				recordIdx=0;
-			}else {
-				Page p =deserialize(pagesDirectory.get(pagesDirectory.size()-1));
-				if(p.isFull()) {
-					pageIdx=pagesDirectory.size();
-					recordIdx=0;
-				}else {
-					pageIdx=pagesDirectory.size()-1;
-					recordIdx=p.size();
+		BPTree tree = colNameIndex.get(this.getClusteringKey());
+		Vector<Ref> ref = tree.searchGreaterThan(key);
+		int pageIdx = -1, recordIdx = -1;
+		if (ref == null || ref.size() == 0) {
+			if (pagesDirectory.size() == 0) {
+				pageIdx = 0;
+				recordIdx = 0;
+			} else {
+				Page p = deserialize(pagesDirectory.get(pagesDirectory.size() - 1));
+				if (p.isFull()) {
+					pageIdx = pagesDirectory.size();
+					recordIdx = 0;
+				} else {
+					pageIdx = pagesDirectory.size() - 1;
+					recordIdx = p.size();
 				}
 			}
-		}else {
-			String minDirectory=ref.get(0).getPageDirectory();
-			for(Ref r: ref) {
-				if(r.getPageDirectory().compareTo(minDirectory)<0) {
-					minDirectory=r.getPageDirectory();
+		} else {
+			String minDirectory = ref.get(0).getPageDirectory();
+			for (Ref r : ref) {
+				if (r.getPageDirectory().compareTo(minDirectory) < 0) {
+					minDirectory = r.getPageDirectory();
 				}
 			}
 			Page p = deserialize(minDirectory);
-			Vector<Record> records=p.getRecords();
-			int clusteredIdx=getColIdx(getClusteringKey());
-			String type =columnTypes.get(getClusteringKey());
-				
-			pageIdx=pagesDirectory.indexOf(minDirectory);
-			recordIdx=BSVector(records, key, clusteredIdx, type);
+			Vector<Record> records = p.getRecords();
+			int clusteredIdx = getColIdx(getClusteringKey());
+			String type = columnTypes.get(getClusteringKey());
+
+			pageIdx = pagesDirectory.indexOf(minDirectory);
+			recordIdx = BSVector(records, key, clusteredIdx, type);
 		}
 		int[] result = new int[2];
 		result[0] = pageIdx;
 		result[1] = recordIdx;
 		return result;
-	
+
 	}
+
 	public static String getDate() {
 		SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 		Date date = new Date();
@@ -428,29 +426,28 @@ static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String
 		int firstPageIdx = pageIdx;
 		for (int i = pageIdx; i < pageDirectorySize && !inserted; i++) {
 			Page p = deserialize(pagesDirectory.get(i));
-			
+
 			/*
 			 * if i = first page then we already have inserted the corresponding keys in the
 			 * indexing data structures otherwise we are just updating the ref of existing
 			 * records(moves from page i to page i+1)
 			 */
-		
+
 			if (i != firstPageIdx) {
 				updateRecordRef(r, new Ref(pagesDirectory.get(i - 1), r.getId()),
 						new Ref(pagesDirectory.get(i), r.getId()));
 			}
-			
-			
+
 			if (!(inserted = p.add(r, recordIdx))) {
 
 				Record removedRecord = p.remove(p.size() - 1);
-			//	System.out.println("Inserting at index :" +recordIdx);
+				// System.out.println("Inserting at index :" +recordIdx);
 				// this for tracing only replace it without if (only addRecord())
 				if (!p.add(r, recordIdx)) {
 					// TO DO remove this case
 					throw new Exception("feh haga 3'lt");
 				}
-				
+
 				r = removedRecord;
 				recordIdx = 0;
 				pageIdx++;
@@ -605,10 +602,10 @@ static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String
 		String type = "";
 		for (int i = 0; i < tableInfo.size(); i++) {
 			if (tableInfo.get(i)[3].trim().equals("True")) {
-				//System.out.println(tableInfo.get(i)[3].trim()+"&&&&&&&&&&&&");
-				//System.out.println("da5lt goua 2ul if");
+				// System.out.println(tableInfo.get(i)[3].trim()+"&&&&&&&&&&&&");
+				// System.out.println("da5lt goua 2ul if");
 				type = tableInfo.get(i)[2].trim();
-			//	System.out.println(type);
+				// System.out.println(type);
 				if (type.equals("java.lang.Integer")) {
 					searchKey = Integer.parseInt(strClusteringKey);
 				} else if (type.equals("java.lang.String")) {
@@ -616,9 +613,9 @@ static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String
 				} else if (type.equals("java.lang.Double")) {
 					searchKey = Double.parseDouble(strClusteringKey);
 				} else if (type.equals("java.awt.Polygon")) {
-					//System.out.println("I am in else");
+					// System.out.println("I am in else");
 					searchKey = new DBPolygon(strClusteringKey);
-				//	System.out.println("search key is null?"+searchKey==null);
+					// System.out.println("search key is null?"+searchKey==null);
 				} else if (type.equals("java.util.Date")) {
 					searchKey = strToDateParser(strClusteringKey);
 				} else if (type.equals("java.lang.Boolean")) {
@@ -632,7 +629,7 @@ static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String
 		if (hasIndex(this.getClusteringKey())) {
 			BPTree tree = colNameIndex.get(getClusteringKey());
 			Vector<Ref> ref = tree.search(searchKey);
-			pagesDirectory.indexOf(ref.get(0).getPageDirectory());
+//			pagesDirectory.indexOf(ref.get(0).getPageDirectory());
 			if (ref == null || ref.size() == 0)
 				return true;
 			String minDir = ref.get(0).getPageDirectory();
@@ -642,7 +639,7 @@ static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String
 					minDir = dir;
 			}
 			i = pagesDirectory.indexOf(minDir);
-
+			System.out.println("Using index");
 		}
 
 		boolean stop = false;
@@ -693,6 +690,7 @@ static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String
 
 				} else if (currKey.compareTo(searchKey) > 0) {
 					stop = true;
+					System.out.println("I stopped"+ currKey);
 					break;
 				}
 			}
@@ -728,39 +726,86 @@ static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String
 		if (!htblColNameValue.containsKey(clusteringKey)) {
 			// from here i will only make every Polygon as DBPolygon
 			// this is the end of making every polygon as DBPolygon
-
-			for (int i = 0; i < pagesDirectory.size(); i++) {
-				Page p = deserialize(pagesDirectory.get(i));
+			Vector<String> pages =null;
+			for (Entry e : htblColNameValue.entrySet()) {
+				String col = (String) e.getKey();
+				if (hasIndex(col)) {
+					BPTree tree = colNameIndex.get(col);
+					String type = this.columnTypes.get(col).trim();
+					Comparable searchKey = getComparable(htblColNameValue.get(col), type);
+					HashSet<String> usedPages =new HashSet<String>();
+					Vector<Ref>ref=tree.search(searchKey);
+					if(ref.size()!=0)pages = new Vector<String>();
+					for(Ref r: ref) {
+						String p=r.getPageDirectory();
+						if(!usedPages.contains(p)) {
+							pages.add(p);
+							usedPages.add(p);
+						}
+					}
+					
+					break;
+				}
+			}
+			if(pages==null) pages=pagesDirectory;
+			for (int i = 0; i < pages.size(); i++) {
+				Page p = deserialize(pages.get(i));
 				for (int k = 0; k < p.size(); k++) {
 					Record currRecord = p.get(k);
 					if (matchRecord(currRecord, htblColNameValue)) {
 						// System.out.println("there is a match");
-						deleteRecordFromIndex(currRecord, new Ref(pagesDirectory.get(i), currRecord.getId()));
+						deleteRecordFromIndex(currRecord, new Ref(pages.get(i), currRecord.getId()));
 						p.remove(k--);
 					}
 				}
 				if (p.size() == 0) {
-					File f = new File(pagesDirectory.get(i));
+					int idx = pagesDirectory.indexOf(pages.get(i));
+					File f = new File(pagesDirectory.get(idx));
 					if (!f.delete()) {
 						throw new Exception("there is an error while deleting");
 					}
-					pagesDirectory.remove(i--);
+					pagesDirectory.remove(idx);
 
 				}
 			}
 		} else {
-			System.out.println("******************Da5alt 2l else part***********************");
 			int clusteredIdx = getColIdx(clusteringKey);
 			String type = this.columnTypes.get(this.getClusteringKey()).trim();
 			Comparable searchKey = getComparable(htblColNameValue.get(this.getClusteringKey()), type);
+			String minDirectory = "";
+			if (hasIndex(clusteringKey)) {
+				BPTree tree = colNameIndex.get(clusteringKey);
+				Vector<Ref> ref = tree.search(searchKey);
+				if (ref != null) {
+					minDirectory = ref.get(0).getPageDirectory();
+					for (Ref r : ref) {
+						if (r.getPageDirectory().compareTo(minDirectory) < 0) {
+							minDirectory = r.getPageDirectory();
+						}
+					}
+					
+				}
+
+			}
 			boolean binaryUsed = false;
-			for (int i = 0; i < pagesDirectory.size(); i++) {
+			int i = 0;
+			if (!minDirectory.equals(""))
+				i = pagesDirectory.indexOf(minDirectory);
+			for (; i < pagesDirectory.size(); i++) {
 				Page p = deserialize(pagesDirectory.get(i));
 				Record lastRecord = p.get(p.size() - 1);
 				Comparable lastRecordKey = getComparable(lastRecord.get(clusteredIdx), type);
 
+				Record firstRecord = p.get(0);
+				Comparable firstRecordKey = getComparable(firstRecord.get(clusteredIdx), type);
+
 				if (lastRecordKey.compareTo(searchKey) < 0)
 					continue;
+
+				if (firstRecordKey.compareTo(searchKey) > 0) {// updated 28/3
+					System.out.println("break in delete big loop");
+					break;
+				}
 
 				Vector<Record> pageRecords = p.getRecords();
 				int deleteIdx = 0;
@@ -772,6 +817,14 @@ static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String
 
 				for (int k = deleteIdx; k < p.size(); k++) {
 					Record currRecord = p.get(k);
+					Comparable currRecordKey = getComparable(currRecord.get(clusteredIdx), type);
+
+					if (currRecordKey.compareTo(searchKey) > 0) {// updated 28/3
+						System.out.println("break in delete small loop");
+
+						break;
+					}
+
 					if (matchRecord(currRecord, htblColNameValue)) {
 						// System.out.println("there is a match");
 						deleteRecordFromIndex(currRecord, new Ref(pagesDirectory.get(i), currRecord.getId()));
@@ -889,7 +942,7 @@ static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String
 			String[] metaFile = line.split(", ");
 			if (metaFile[0].equals(this.tableName) && metaFile[1].equals(colName)) {
 				line = this.tableName + ", " + colName + ", " + columnTypes.get(colName) + ", "
-						+ (colName.equals( this.getClusteringKey()) ? "True" : "False") + ", " + "True";
+						+ (colName.equals(this.getClusteringKey()) ? "True" : "False") + ", " + "True";
 			}
 			write.append(line + "\n");
 
@@ -931,11 +984,11 @@ static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String
 		String type = columnTypes.get(strColName);
 		int colPos = this.getColIdx(strColName);
 		BPTree tree = null;
-	//	System.out.println(type);
+		// System.out.println(type);
 		if (type.equals("java.lang.Integer")) {
-		//	System.out.println("goua 2l if");
+			// System.out.println("goua 2l if");
 			tree = new BPTree<Integer>(NodeSize);
-			//System.out.println(tree.toString());
+			// System.out.println(tree.toString());
 		} else if (type.equals("java.lang.String")) {
 			tree = new BPTree<String>(NodeSize);
 		} else if (type.equals("java.lang.Double")) {
@@ -1244,7 +1297,7 @@ static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String
 		}
 		return ans;
 	}
-
+	
 	public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws Exception {
 		HashSet<Record> set = new HashSet<Record>();
 		// TO DO check if the array size equal zero
@@ -1253,6 +1306,7 @@ static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String
 			throw new DBAppException("Invalid syntax format!");
 		for (int i = 1; i < arrSQLTerms.length; i++) {
 			HashSet<Record> temp = selectOnOneCol(arrSQLTerms[i]);
+			
 			switch (strarrOperators[i - 1].toUpperCase().trim()) {
 			case "AND":
 				set = and(set, temp);
@@ -1274,7 +1328,13 @@ static int BSVector(Vector<Record> arr, Comparable val, int clusteredIdx, String
 
 	private HashSet<Record> selectOnOneCol(SQLTerm sqlTerm) throws Exception {
 		String colName = sqlTerm.get_strColumnName();
-		Comparable val = (Comparable) sqlTerm.get_objValue();
+			Comparable val = (Comparable) sqlTerm.get_objValue();
+		if(!this.columnTypes.containsKey(colName)) {
+			throw new DBAppException("Invalid col name!");
+		}
+		if (!checkType(val, this.columnTypes.get(colName))) {
+			throw new DBAppException("Invalid col type!");
+		}
 		String op = sqlTerm.get_strOperator();
 		HashSet<Record> set = new HashSet<Record>();
 

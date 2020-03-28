@@ -1,2 +1,4 @@
 Table Name, Column Name, Column Type, ClusteringKey, Indexed
+Ahmed, name, java.lang.String, False, False
+Ahmed, poly, java.awt.Polygon, False, False
 Ahmed, id, java.lang.Integer, True, True
