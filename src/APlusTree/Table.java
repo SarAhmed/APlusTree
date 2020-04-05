@@ -54,7 +54,9 @@ public class Table implements Serializable {
 		initializeColumnsHeader();
 		save();
 	}
-
+	public String getType(String colName) {
+		return columnTypes.get(colName);
+	}
 	private void initializeColumnsHeader() throws IOException {
 		tableHeader = "";
 		ArrayList<String[]> colInfo = getColInfo();
@@ -690,7 +692,7 @@ public class Table implements Serializable {
 
 				} else if (currKey.compareTo(searchKey) > 0) {
 					stop = true;
-					System.out.println("I stopped"+ currKey);
+					System.out.println("I stopped" + currKey);
 					break;
 				}
 			}
@@ -726,28 +728,30 @@ public class Table implements Serializable {
 		if (!htblColNameValue.containsKey(clusteringKey)) {
 			// from here i will only make every Polygon as DBPolygon
 			// this is the end of making every polygon as DBPolygon
-			Vector<String> pages =null;
+			Vector<String> pages = null;
 			for (Entry e : htblColNameValue.entrySet()) {
 				String col = (String) e.getKey();
 				if (hasIndex(col)) {
 					BPTree tree = colNameIndex.get(col);
 					String type = this.columnTypes.get(col).trim();
 					Comparable searchKey = getComparable(htblColNameValue.get(col), type);
-					HashSet<String> usedPages =new HashSet<String>();
-					Vector<Ref>ref=tree.search(searchKey);
-					if(ref.size()!=0)pages = new Vector<String>();
-					for(Ref r: ref) {
-						String p=r.getPageDirectory();
-						if(!usedPages.contains(p)) {
+					HashSet<String> usedPages = new HashSet<String>();
+					Vector<Ref> ref = tree.search(searchKey);
+					if (ref.size() != 0)
+						pages = new Vector<String>();
+					for (Ref r : ref) {
+						String p = r.getPageDirectory();
+						if (!usedPages.contains(p)) {
 							pages.add(p);
 							usedPages.add(p);
 						}
 					}
-					
+
 					break;
 				}
 			}
-			if(pages==null) pages=pagesDirectory;
+			if (pages == null)
+				pages = pagesDirectory;
 			for (int i = 0; i < pages.size(); i++) {
 				Page p = deserialize(pages.get(i));
 				for (int k = 0; k < p.size(); k++) {
@@ -783,7 +787,7 @@ public class Table implements Serializable {
 							minDirectory = r.getPageDirectory();
 						}
 					}
-					
+
 				}
 
 			}
@@ -1023,15 +1027,26 @@ public class Table implements Serializable {
 		this.save();
 	}
 
-	public static HashSet<Record> and(HashSet<Record> a, HashSet<Record> b) {
+//	public static HashSet<Record> and(HashSet<Record> a, HashSet<Record> b) {
+//		HashSet<Record> ans = new HashSet<Record>();
+//		for (Record r : a) {
+//			if (b.contains(r))
+//				ans.add(r);
+//		}
+////		for(Record r:b) {
+////			if(a.contains(r))ans.add(r);
+////		}
+//		return ans;
+//
+//	}
+
+	public HashSet<Record> and(HashSet<Record> a, SQLTerm sqlTerm) throws DBAppException, IOException {
 		HashSet<Record> ans = new HashSet<Record>();
 		for (Record r : a) {
-			if (b.contains(r))
+			if (matchTerm(r, sqlTerm))
 				ans.add(r);
 		}
-//		for(Record r:b) {
-//			if(a.contains(r))ans.add(r);
-//		}
+
 		return ans;
 
 	}
@@ -1092,7 +1107,6 @@ public class Table implements Serializable {
 	@SuppressWarnings({ "unchecked", "unused" })
 	public <T extends Comparable<T>> HashSet<Record> selectEqual(String colName, T val) throws Exception {
 		HashSet<Record> ans = new HashSet<Record>();
-
 		// int colIndex = getColIdx(colName);
 
 		if (hasIndex(colName)) {
@@ -1297,19 +1311,148 @@ public class Table implements Serializable {
 		}
 		return ans;
 	}
-	
+
+	public boolean matchTerm(Record r, SQLTerm sqlTerm) throws DBAppException, IOException {
+
+		String colName = sqlTerm.get_strColumnName();
+		Comparable val = (Comparable) sqlTerm.get_objValue();
+		if (!this.columnTypes.containsKey(colName)) {
+			throw new DBAppException("Invalid col name!");
+		}
+		if (!checkType(val, this.columnTypes.get(colName))) {
+			throw new DBAppException("Invalid col type!");
+		}
+		int colIdx = getColIdx(colName);
+		String type = columnTypes.get(colName);
+		Comparable recordVal = getComparable(r.get(colIdx), type);
+		String op = sqlTerm.get_strOperator();
+
+		switch (op) {
+		case "=":
+			return recordVal.compareTo(val) == 0;
+
+		case ">":
+
+			return recordVal.compareTo(val) > 0;
+		case ">=":
+			return recordVal.compareTo(val) >= 0;
+		case "<":
+			return recordVal.compareTo(val) < 0;
+
+		case "<=":
+			return recordVal.compareTo(val) <= 0;
+		case "!=":
+			return recordVal.compareTo(val) != 0;
+
+		}
+		return false;
+
+	}
+
+//Not tested
+	public boolean matchCondition(Record r, SQLTerm[] arrSQLTerms, String[] strarrOperators)
+			throws IOException, DBAppException {
+
+		if (arrSQLTerms.length == 0)
+			return true;
+
+		boolean result = matchTerm(r, arrSQLTerms[0]);
+
+		for (int i = 1; i < arrSQLTerms.length; i++) {
+			boolean currTermEval = matchTerm(r, arrSQLTerms[i]);
+
+			switch (strarrOperators[i - 1].toUpperCase().trim()) {
+			case "AND":
+				result &= currTermEval;
+				break;
+			case "OR":
+				result |= currTermEval;
+
+				break;
+			case "XOR":
+				result ^= currTermEval;
+				break;
+
+			default:
+				throw new DBAppException("Invalid connector!!!!");
+			}
+
+		}
+
+		return result;
+
+	}
+
+	/*
+	 * term1 & term2 & term3 || term4 & term5 &term6 f t t f f t
+	 * 
+	 * //f means doesn't have index
+	 */
+	// Not tested
+	public boolean isLinearSearch(SQLTerm[] arrSQLTerms, String[] strarrOperators) {
+		if (arrSQLTerms.length == 0)
+			return true;
+
+//		int i=1;
+//		if(strarrOperators.length!=0&&strarrOperators[0].toUpperCase().trim().equals("AND")) {
+//			boolean hasIndex=(hasIndex(arrSQLTerms[0].get_strColumnName())||arrSQLTerms[0].get_strColumnName().equals(getClusteringKey()));
+//			while(i-1<strarrOperators.length&&strarrOperators[i-1].toUpperCase().trim().equals("AND")) {
+//				hasIndex|=hasIndex(arrSQLTerms[i].get_strColumnName())||arrSQLTerms[i].get_strColumnName().equals(getClusteringKey());
+//				i++;
+//			}
+//			if(!hasIndex)return true;
+//		}
+		if (!hasIndex(arrSQLTerms[0].get_strColumnName())
+				&& !arrSQLTerms[0].get_strColumnName().equals(getClusteringKey()))
+			return true;
+
+		for (int i = 1; i < arrSQLTerms.length; i++) {
+			if (strarrOperators[i - 1].toUpperCase().trim().equals("AND"))
+				continue;
+			if (!hasIndex(arrSQLTerms[i].get_strColumnName())
+					&& !arrSQLTerms[i].get_strColumnName().equals(getClusteringKey()))
+				return true;
+		}
+		return false;
+	}
 	public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws Exception {
+		if(isLinearSearch(arrSQLTerms, strarrOperators)) {
+			System.out.println("selectFromTableLinear^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+			return selectFromTableLinear(arrSQLTerms, strarrOperators);
+		}else {
+			System.out.println("selectFromTableNotLinear^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+
+			return selectFromTableNotLinear(arrSQLTerms, strarrOperators);
+		}
+	}
+			
+	public Iterator selectFromTableLinear(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws IOException, DBAppException {
+		Vector<Record> result=new Vector<Record>();
+		for(int i=0;i<pagesDirectory.size();i++) {
+			Page p =deserialize(pagesDirectory.get(i));
+			for(int j=0;j<p.size();j++) {
+				Record record =p.get(j);
+				if(matchCondition(record, arrSQLTerms, strarrOperators)) {
+					result.add(record);
+				}
+			}
+		}
+		return result.iterator();
+	}
+	public Iterator selectFromTableNotLinear(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws Exception {
 		HashSet<Record> set = new HashSet<Record>();
 		// TO DO check if the array size equal zero
 		set = selectOnOneCol(arrSQLTerms[0]);
 		if (arrSQLTerms.length - 1 != strarrOperators.length)
 			throw new DBAppException("Invalid syntax format!");
 		for (int i = 1; i < arrSQLTerms.length; i++) {
-			HashSet<Record> temp = selectOnOneCol(arrSQLTerms[i]);
-			
+			HashSet<Record> temp = null;
+			if (!strarrOperators[i - 1].toUpperCase().trim().equals("AND"))
+				temp = selectOnOneCol(arrSQLTerms[i]);
+
 			switch (strarrOperators[i - 1].toUpperCase().trim()) {
 			case "AND":
-				set = and(set, temp);
+				set = and(set, arrSQLTerms[i]);
 				break;
 			case "OR":
 				set = or(set, temp);
@@ -1328,8 +1471,8 @@ public class Table implements Serializable {
 
 	private HashSet<Record> selectOnOneCol(SQLTerm sqlTerm) throws Exception {
 		String colName = sqlTerm.get_strColumnName();
-			Comparable val = (Comparable) sqlTerm.get_objValue();
-		if(!this.columnTypes.containsKey(colName)) {
+		Comparable val = (Comparable) sqlTerm.get_objValue();
+		if (!this.columnTypes.containsKey(colName)) {
 			throw new DBAppException("Invalid col name!");
 		}
 		if (!checkType(val, this.columnTypes.get(colName))) {

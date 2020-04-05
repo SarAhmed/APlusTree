@@ -53,6 +53,7 @@ public class DBApp {
 		return ans;
 
 	}
+	
 
 	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws Exception {
 		Table t = getTable(strTableName);
@@ -146,15 +147,29 @@ public class DBApp {
 		return t.toString();
 	}
 
+	
 	public void createBTreeIndex(String strTableName, String strColName)
 			throws DBAppException, FileNotFoundException, ClassNotFoundException, IOException {
 		Table t = (Table) this.getTable(strTableName);
 		if (t == null)
 			throw new DBAppException("The entered table does not exist");
+		if(t.getType(strColName).equals("java.awt.Polygon"))
+			throw new DBAppException("You can't create B+ Tree on type java.awt.Polygon please choose an appropriate column");
+
 		t.createIndex(strColName);
 
 	}
-
+	public void createRTreeIndex(String strTableName,
+			String strColName) throws DBAppException, FileNotFoundException, ClassNotFoundException, IOException{
+		Table t = (Table) this.getTable(strTableName);
+		if (t == null)
+			throw new DBAppException("The entered table does not exist");
+		
+		if(!t.getType(strColName).equals("java.awt.Polygon"))
+			throw new DBAppException("You can't create RTree on type "+t.getType(strColName)+" please choose an appropriate column");
+		t.createIndex(strColName);
+		
+	}
 	public static void main(String[] args) throws Exception {
 
 		DBApp dbapp = new DBApp();
