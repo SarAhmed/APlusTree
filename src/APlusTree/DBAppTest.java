@@ -4,17 +4,14 @@ import java.awt.Polygon;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-//import static APlusTree.Table.and;
 
 public class DBAppTest {
 
 	public static void main(String[] args) throws Exception {
-		DBApp db = new DBApp();
-		// testInsert(db);
-		select(db);
-		System.out.println("***********************************************");
-		System.out.println(db.displayTable("Ahmed"));
-
+		DBApp db= new DBApp();
+			testUpdate(db);
+		//testInsert(db);
+			System.out.println(db.displayTable("Ahmed"));
 	}
 
 	public static void testInsert(DBApp db) throws Exception {
@@ -25,8 +22,10 @@ public class DBAppTest {
 		Hashtable<String, String> htblColNameType = new Hashtable<String, String>();
 		htblColNameType.put("id", "java.lang.Integer");
 		htblColNameType.put("name", "java.lang.String");
-		db.createTable(tableName, "id", htblColNameType);
+		htblColNameType.put("date", "java.util.Date");
+		db.createTable(tableName, "date", htblColNameType);
 		db.createBTreeIndex(tableName, "id");
+		
 
 		Random rnd = new Random();
 
@@ -35,9 +34,15 @@ public class DBAppTest {
 			int id = rnd.nextInt(10);
 			htblColNameValue.put("id", new Integer(id));
 			htblColNameValue.put("name", "aman" + id);
+			Calendar cal = Calendar.getInstance();
+			//cal.set(Calendar.Month, 1)
+			cal.set(2020+i, i%12+1, (i)%30 ,0, 0, 0);
+			cal.set(Calendar.MILLISECOND,0);
+			Date date = cal.getTime();
+			htblColNameValue.put("date",date);
 			db.insertIntoTable("Ahmed", htblColNameValue);
 
-		}
+			}
 
 	}
 
@@ -65,7 +70,7 @@ public class DBAppTest {
 		// htblColNameValue.put("gpa", new Integer(8));
 		htblColNameValue.put("name", "Saraaaaaaaaaaaaaaaaah");
 
-		db.updateTable(tableName, "(9 ,9 ) (0 ,9 ) (6 ,0 ) (2 ,3 ) (3 ,6 ) (4 ,7 )", htblColNameValue);
+		db.updateTable(tableName, "2020-1-31", htblColNameValue);
 
 	}
 

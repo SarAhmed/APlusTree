@@ -63,7 +63,8 @@ public class DBApp {
 
 	}
 
-	public void updateTable(String strTableName, String strClusteringKey, Hashtable<String, Object> htblColNameValue)
+	
+public void updateTable(String strTableName, String strClusteringKey, Hashtable<String, Object> htblColNameValue)
 			throws DBAppException, FileNotFoundException, ClassNotFoundException, IOException {
 		Table t = getTable(strTableName);
 		if (t == null)

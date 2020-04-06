@@ -548,9 +548,12 @@ public class Table implements Serializable {
 		int month = Integer.parseInt(st.nextToken());
 		int day = Integer.parseInt(st.nextToken());
 		Calendar cal = Calendar.getInstance();
-		cal.set(Calendar.YEAR, year);
-		cal.set(Calendar.MONTH, month - 1);
-		cal.set(Calendar.DAY_OF_MONTH, day);
+//		cal.set(Calendar.YEAR, year);
+//		cal.set(Calendar.MONTH, month - 1);
+//		cal.set(Calendar.DAY_OF_MONTH, day);
+		cal.set(year, month-1, day,0, 0, 0);
+		cal.set(Calendar.MILLISECOND,0);
+		
 		Date dateRepresentation = cal.getTime();
 
 		return dateRepresentation;
@@ -669,7 +672,6 @@ public class Table implements Serializable {
 
 				Comparable currKey = getComparable(currRecord.get(keyIdx), type);
 				if (currKey.compareTo(searchKey) == 0) {
-
 					for (Entry<String, Object> entry : htblColNameValue.entrySet()) {
 						String colName = entry.getKey();
 						// after adding index
@@ -692,7 +694,10 @@ public class Table implements Serializable {
 
 				} else if (currKey.compareTo(searchKey) > 0) {
 					stop = true;
-					System.out.println("I stopped" + currKey);
+					System.out.println(searchKey);
+					System.out.println(searchKey.compareTo(currKey));
+					
+					System.out.println("I stopped " + currKey);
 					break;
 				}
 			}
@@ -718,7 +723,7 @@ public class Table implements Serializable {
 			Polygon p = (Polygon) htblColNameValue.get(s);
 			htblColNameValue.put(s, new DBPolygon(p));
 		}
-
+		
 		String clusteringKey = getClusteringKey();
 
 		if (!checkValidInput(htblColNameValue)) {

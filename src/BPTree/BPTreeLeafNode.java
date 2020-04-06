@@ -281,6 +281,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 * 
 	 * the passed key from the B+ tree
 	 */
+	
 	public boolean delete(T key, BPTreeInnerNode<T> parent, int ptr, Ref ref) {
 
 		for (int i = 0; i < numberOfKeys; ++i)
