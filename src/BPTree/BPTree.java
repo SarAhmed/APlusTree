@@ -1,5 +1,6 @@
 package BPTree;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -13,25 +14,32 @@ public class BPTree<T extends Comparable<T>> implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	private int order;
-	private static Comparable minimumKey;
+	private  Comparable minimumKey;
+	private int nextId;
+
 	private BPTreeNode<T> root;
+	// paging
+	private String path;
 
 	/**
 	 * Creates an empty B+ tree
 	 * 
 	 * @param order the maximum number of keys in the nodes of the tree
+	 * @throws IOException 
 	 */
-	public BPTree(int order) {
+	// path will be passed as data/tableName_colName
+	public BPTree(int order,String path) throws IOException {
+		this.path=path;
 		this.order = order;
-		root = new BPTreeLeafNode<T>(this.order);
+		root = new BPTreeLeafNode<T>(this.order,path,this);
 		root.setRoot(true);
 	}
 
-	public void update(T key, Ref ref, T newVal) {
+	public void update(T key, Ref ref, T newVal) throws IOException {
 		delete(key, ref);
 		insert(newVal,ref);
 	}
-	public void updateRef(T key,Ref ref, Ref newRef) {
+	public void updateRef(T key,Ref ref, Ref newRef) throws IOException {
 		delete(key, ref);
 		insert(key,newRef);
 		
@@ -42,16 +50,18 @@ public class BPTree<T extends Comparable<T>> implements Serializable {
 	 * 
 	 * @param key             the key to be inserted
 	 * @param recordReference the reference of the record associated with the key
+	 * @throws IOException 
 	 */
-	public void insert(T key, Ref recordReference) {
+	public void insert(T key, Ref recordReference) throws IOException {
 		if (minimumKey == null || minimumKey.compareTo(key) > 0)
 			minimumKey = key;
 
 		boolean exists = containsKey(key);
 		if (!exists) {
+			
 			PushUp<T> pushUp = root.insert(key, recordReference, null, -1);
 			if (pushUp != null) {
-				BPTreeInnerNode<T> newRoot = new BPTreeInnerNode<T>(order);
+				BPTreeInnerNode<T> newRoot = new BPTreeInnerNode<T>(order,path,this);
 				newRoot.insertLeftAt(0, pushUp.key, root);
 				newRoot.setChild(1, pushUp.newNode);
 				root.setRoot(false);
@@ -61,6 +71,8 @@ public class BPTree<T extends Comparable<T>> implements Serializable {
 		} else {
 			root.addDuplicateKey(key, recordReference);
 		}
+		System.out.println(key +"is inserted");
+
 
 	}
 
@@ -113,8 +125,9 @@ public class BPTree<T extends Comparable<T>> implements Serializable {
 	 * @param key the key to be deleted
 	 * @return a boolean to indicate whether the key is successfully deleted or it
 	 *         was not in the tree
+	 * @throws IOException 
 	 */
-	public boolean delete(T key, Ref ref) {
+	public boolean delete(T key, Ref ref) throws IOException {
 		boolean done = root.delete(key, null, -1, ref);
 		// go down and find the new root in case the old root is deleted
 		while (root instanceof BPTreeInnerNode && !root.isRoot())
@@ -156,5 +169,13 @@ public class BPTree<T extends Comparable<T>> implements Serializable {
 		}
 		// </For Testing>
 		return s;
+	}
+
+	public int getNextId() {
+		return nextId;
+	}
+
+	public void setNextId(int nextId) {
+		this.nextId = nextId;
 	}
 }

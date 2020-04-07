@@ -1,5 +1,7 @@
 package BPTree;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Vector;
 
@@ -10,33 +12,43 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 */
 	private static final long serialVersionUID = 1L;
 	private Vector<Ref>[] records;
-	private BPTreeLeafNode<T> next;
+	private String next;
+	
 
 	@SuppressWarnings("unchecked")
-	public BPTreeLeafNode(int n) {
-		super(n);
+	public BPTreeLeafNode(int n,String path,BPTree tree) throws IOException {
+		super(n, path,tree);
 		keys = new Comparable[n];
 		records = new Vector[n];
 		for (int i = 0; i < n; i++) {
 			records[i] = new Vector<Ref>();
 		}
-
+		save();
 	}
 
 	/**
 	 * @return the next leaf node
 	 */
 	public BPTreeLeafNode<T> getNext() {
-		return this.next;
+	
+		return(next==null)?null:(BPTreeLeafNode)deserializeNode(next);
 	}
 
 	/**
 	 * sets the next leaf node
 	 * 
 	 * @param node the next leaf node
+	 * @throws IOException 
 	 */
-	public void setNext(BPTreeLeafNode<T> node) {
-		this.next = node;
+	public void setNext(BPTreeLeafNode<T> node) throws IOException {
+		if(node==null) {
+			System.out.println("you are having next as null");
+			this.next=null;
+		}else {
+			
+			this.next = node.getDirectory();
+		}
+		save();
 	}
 
 	/**
@@ -53,9 +65,11 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 * 
 	 * @param index           the index to set the value at
 	 * @param recordReference the reference to the record
+	 * @throws IOException 
 	 */
-	public void setRecord(int index, Vector<Ref> recordReference) {
+	public void setRecord(int index, Vector<Ref> recordReference) throws IOException {
 		records[index] = recordReference;
+		save();
 	}
 
 	/**
@@ -84,8 +98,9 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	/**
 	 * insert the specified key associated with a given record refernce in the B+
 	 * tree
+	 * @throws IOException 
 	 */
-	public PushUp<T> insert(T key, Ref recordReference, BPTreeInnerNode<T> parent, int ptr) {
+	public PushUp<T> insert(T key, Ref recordReference, BPTreeInnerNode<T> parent, int ptr) throws IOException {
 		if (this.isFull()) {
 			BPTreeNode<T> newNode = this.split(key, recordReference);
 			Comparable<T> newKey = newNode.getFirstKey();
@@ -108,8 +123,9 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 * @param index           the index at which the key will be inserted
 	 * @param key             the key to be inserted
 	 * @param recordReference the pointer to the record associated with the key
+	 * @throws IOException 
 	 */
-	private void insertAt(int index, Comparable<T> key, Vector<Ref> recordReference) {
+	private void insertAt(int index, Comparable<T> key, Vector<Ref> recordReference) throws IOException {
 		for (int i = numberOfKeys - 1; i >= index; --i) {
 			this.setKey(i + 1, getKey(i));
 			this.setRecord(i + 1, getRecord(i));
@@ -119,6 +135,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 
 		this.setRecord(index, recordReference);
 		++numberOfKeys;
+		save();
 	}
 
 	/**
@@ -127,8 +144,9 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 * @param key             the new key that caused the split
 	 * @param recordReference the reference of the new key
 	 * @return the new node that results from the split
+	 * @throws IOException 
 	 */
-	public BPTreeNode<T> split(T key, Ref recordReference) {
+	public BPTreeNode<T> split(T key, Ref recordReference) throws IOException {
 		int keyIndex = this.findIndex(key);
 		int midIndex = numberOfKeys / 2;
 		if ((numberOfKeys & 1) == 1 && keyIndex > midIndex) // split nodes evenly
@@ -136,7 +154,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 
 		int totalKeys = numberOfKeys + 1;
 		// move keys to a new node
-		BPTreeLeafNode<T> newNode = new BPTreeLeafNode<T>(order);
+		BPTreeLeafNode<T> newNode = new BPTreeLeafNode<T>(order,this.getPath(),this.getTree());
 		for (int i = midIndex; i < totalKeys - 1; ++i) {
 			newNode.insertAt(i - midIndex, this.getKey(i), this.getRecord(i));
 			numberOfKeys--;
@@ -154,12 +172,12 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 		// set next pointers
 		newNode.setNext(this.getNext());
 		this.setNext(newNode);
-
+		save();
 		return newNode;
 	}
 
 	/**
-	 * finds the index at which the passed key must be located
+	 * finds the index at which the passed key must be located 
 	 * 
 	 * @param key the key to be checked for its location
 	 * @return the expected index of the key
@@ -196,7 +214,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 				result.addAll(this.getRecord(i));
 		}
 		if(this.next!=null) {
-			result.addAll(this.next.searchGreaterThan(key));
+			result.addAll(getNext().searchGreaterThan(key));
 		}
 		return result;
 	}
@@ -208,7 +226,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 				result.addAll(this.getRecord(i));
 		}
 		if(this.next!=null) {
-			result.addAll(this.next.searchGreaterThanOrEqual(key));
+			result.addAll(getNext().searchGreaterThanOrEqual(key));
 		}
 		return result;
 	}
@@ -223,7 +241,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 			}
 		}
 		if(this.next!=null) {
-			result.addAll(this.next.searchSmallerThan(minKey, key));
+			result.addAll(getNext().searchSmallerThan(minKey, key));
 		}
 		return result;
 	}
@@ -238,7 +256,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 			}
 		}
 		if(this.next!=null) {
-			result.addAll(this.next.searchSmallerThanOrEqual(minKey, key));
+			result.addAll(getNext().searchSmallerThanOrEqual(minKey, key));
 		}
 		return result;
 	}
@@ -252,7 +270,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 			}
 		}
 		if(this.next!=null) {
-			result.addAll(this.next.notEqual(minKey, key));
+			result.addAll(getNext().notEqual(minKey, key));
 		}
 		return result;
 	}
@@ -269,10 +287,11 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 		return false;
 	}
 
-	public void addDuplicateKey(T key, Ref ref) {
+	public void addDuplicateKey(T key, Ref ref) throws IOException {
 		for (int i = 0; i < numberOfKeys; ++i)
 			if (this.getKey(i).compareTo(key) == 0) {
 				records[i].add(ref);
+				save();
 				return;
 			}
 	}
@@ -280,9 +299,10 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	/**
 	 * 
 	 * the passed key from the B+ tree
+	 * @throws IOException 
 	 */
 	
-	public boolean delete(T key, BPTreeInnerNode<T> parent, int ptr, Ref ref) {
+	public boolean delete(T key, BPTreeInnerNode<T> parent, int ptr, Ref ref) throws IOException {
 
 		for (int i = 0; i < numberOfKeys; ++i)
 			if (keys[i].compareTo(key) == 0) {
@@ -310,8 +330,9 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 * delete a key at the specified index of the node
 	 * 
 	 * @param index the index of the key to be deleted
+	 * @throws IOException 
 	 */
-	public void deleteAt(int index, Ref ref) {
+	public void deleteAt(int index, Ref ref) throws IOException {
 //		System.out.println("index: " + index + " ref: " + ref);
 //		System.out.println("record size: " + records[index].size());
 		for (int i = 0; i < records[index].size(); i++) {
@@ -332,6 +353,7 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 			}
 			numberOfKeys--;
 		}
+		save();
 	}
 	
 
@@ -341,23 +363,27 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 * @param parent the parent of the current node
 	 * @param ptr    the index of the parent pointer that points to this node
 	 * @return true if borrow is done successfully and false otherwise
+	 * @throws IOException 
 	 */
-	public void deleteVectorAt(int index) {
+	public void deleteVectorAt(int index) throws IOException {
 		for (int i = index; i < numberOfKeys - 1; ++i) {
 			keys[i] = keys[i + 1];
 			records[i] = records[i + 1];
 		}
 		numberOfKeys--;
+		save();
 	}
 
-	public boolean borrow(BPTreeInnerNode<T> parent, int ptr) {
+	public boolean borrow(BPTreeInnerNode<T> parent, int ptr) throws IOException {
 		// check left sibling
 		if (ptr > 0) {
-			BPTreeLeafNode<T> leftSibling = (BPTreeLeafNode<T>) parent.getChild(ptr - 1);
+			BPTreeLeafNode<T> leftSibling = (BPTreeLeafNode<T>) (parent.getChild(ptr - 1));
 			if (leftSibling.numberOfKeys > leftSibling.minKeys()) {
 				this.insertAt(0, leftSibling.getLastKey(), leftSibling.getLastRecord());
 				leftSibling.deleteVectorAt(leftSibling.numberOfKeys - 1);
 				parent.setKey(ptr - 1, keys[0]);
+				System.out.println(parent.getDirectory()+"laf");
+
 				return true;
 			}
 		}
@@ -369,9 +395,13 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 				this.insertAt(numberOfKeys, rightSibling.getFirstKey(), rightSibling.getFirstRecord());
 				rightSibling.deleteVectorAt(0);
 				parent.setKey(ptr, rightSibling.getFirstKey());
+				System.out.println(parent.getDirectory()+"Tttdasdasdttttt");
+
 				return true;
 			}
 		}
+		System.out.println(parent.getDirectory()+"Go to hell");
+
 		return false;
 	}
 
@@ -380,18 +410,21 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 * 
 	 * @param parent the parent of the current node
 	 * @param ptr    the index of the parent pointer that points to this node
+	 * @throws IOException 
 	 */
-	public void merge(BPTreeInnerNode<T> parent, int ptr) {
+	public void merge(BPTreeInnerNode<T> parent, int ptr) throws IOException {
 		if (ptr > 0) {
 			// merge with left
 			BPTreeLeafNode<T> leftSibling = (BPTreeLeafNode<T>) parent.getChild(ptr - 1);
 			leftSibling.merge(this);
 			parent.deleteAt(ptr - 1);
+			
 		} else {
 			// merge with right
 			BPTreeLeafNode<T> rightSibling = (BPTreeLeafNode<T>) parent.getChild(ptr + 1);
 			this.merge(rightSibling);
 			parent.deleteAt(ptr);
+			
 		}
 	}
 
@@ -400,12 +433,18 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	 * deleted
 	 * 
 	 * @param foreignNode the node to be merged with the current node
+	 * @throws IOException 
 	 */
-	public void merge(BPTreeLeafNode<T> foreignNode) {
+	public void merge(BPTreeLeafNode<T> foreignNode) throws IOException {
 		for (int i = 0; i < foreignNode.numberOfKeys; ++i)
 			this.insertAt(numberOfKeys, foreignNode.getKey(i), foreignNode.getRecord(i));
 
 		this.setNext(foreignNode.getNext());
+		System.out.println("Leave Node   "+foreignNode.getDirectory());
+		File file = new File(foreignNode.getDirectory());
+		if(file.exists())
+			file.delete();
+		//Added this line to delete from disk 
 	}
 
 	

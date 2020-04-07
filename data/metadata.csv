@@ -1,4 +1,3 @@
 Table Name, Column Name, Column Type, ClusteringKey, Indexed
-Ahmed, date, java.util.Date, True, False
 Ahmed, name, java.lang.String, False, False
-Ahmed, id, java.lang.Integer, False, True
+Ahmed, id, java.lang.Integer, True, True

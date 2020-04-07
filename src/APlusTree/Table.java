@@ -35,9 +35,10 @@ public class Table implements Serializable {
 	private String tableName, directory, tableHeader, clusteringKey;
 	private Hashtable<String, String> columnTypes;
 	private Hashtable<String, BPTree> colNameIndex;
-
 	private Vector<String> pagesDirectory;
-
+	public void dispalyIndex(String colName) {
+		System.out.println(colNameIndex.get(colName));
+	}
 	public Table(String path, String strTableName, Hashtable<String, String> htblColNameType, String strKeyColName,
 
 			int MaximumRowsCountinPage, int nodeSize) throws IOException {
@@ -399,7 +400,7 @@ public class Table implements Serializable {
 			throw new DBAppException("Invalid record format");
 		int pageIdx = location[0];
 		int recordIdx = location[1];
-		Record r = new Record();
+		Record r = new Record(this.tableName);
 		ArrayList<String[]> metaInfo = this.getColInfo();
 		for (int i = 0; i < metaInfo.size(); i++) {
 			if (!htblColNameValue.containsKey(metaInfo.get(i)[1])) {
@@ -589,7 +590,11 @@ public class Table implements Serializable {
 				polygonColumns.add(e.getKey());
 			}
 		}
-
+		
+		
+		  if(htblColNameValue.containsKey(getClusteringKey())) throw new
+		  DBAppException("You can NOT update the ClusteringKey");
+		 
 		for (String s : polygonColumns) {
 			Polygon p = (Polygon) htblColNameValue.get(s);
 			htblColNameValue.put(s, new DBPolygon(p));
@@ -673,7 +678,9 @@ public class Table implements Serializable {
 				Comparable currKey = getComparable(currRecord.get(keyIdx), type);
 				if (currKey.compareTo(searchKey) == 0) {
 					for (Entry<String, Object> entry : htblColNameValue.entrySet()) {
+						
 						String colName = entry.getKey();
+						//System.out.println(colName);
 						// after adding index
 						Comparable value = (Comparable) entry.getValue();
 						int colIdx = getColIdx(colName);
@@ -742,7 +749,8 @@ public class Table implements Serializable {
 					Comparable searchKey = getComparable(htblColNameValue.get(col), type);
 					HashSet<String> usedPages = new HashSet<String>();
 					Vector<Ref> ref = tree.search(searchKey);
-					if (ref.size() != 0)
+					if(ref == null) ref = new Vector<Ref>(); 					//changed 7-4
+					if ( ref.size() != 0)
 						pages = new Vector<String>();
 					for (Ref r : ref) {
 						String p = r.getPageDirectory();
@@ -993,21 +1001,22 @@ public class Table implements Serializable {
 		String type = columnTypes.get(strColName);
 		int colPos = this.getColIdx(strColName);
 		BPTree tree = null;
+		String pagingPath=directory + tableName + "_" + strColName;
 		// System.out.println(type);
 		if (type.equals("java.lang.Integer")) {
 			// System.out.println("goua 2l if");
-			tree = new BPTree<Integer>(NodeSize);
+			tree = new BPTree<Integer>(NodeSize,pagingPath);
 			// System.out.println(tree.toString());
 		} else if (type.equals("java.lang.String")) {
-			tree = new BPTree<String>(NodeSize);
+			tree = new BPTree<String>(NodeSize,pagingPath);
 		} else if (type.equals("java.lang.Double")) {
-			tree = new BPTree<Double>(NodeSize);
+			tree = new BPTree<Double>(NodeSize,pagingPath);
 		} else if (type.equals("java.awt.Polygon")) {
-			tree = new BPTree<DBPolygon>(NodeSize);
+			tree = new BPTree<DBPolygon>(NodeSize,pagingPath);
 		} else if (type.equals("java.util.Date")) {
-			tree = new BPTree<Date>(NodeSize);
+			tree = new BPTree<Date>(NodeSize,pagingPath);
 		} else if (type.equals("java.lang.Boolean")) {
-			tree = new BPTree<Boolean>(NodeSize);
+			tree = new BPTree<Boolean>(NodeSize,pagingPath);
 
 		}
 		colNameIndex.put(strColName, tree);
@@ -1087,6 +1096,9 @@ public class Table implements Serializable {
 
 	private HashSet<Record> getRecordsFromRef(Vector<Ref> refs) {
 		HashMap<String, HashSet<Long>> pageToRecord = new HashMap();
+		//updated 7-4
+		if( refs == null) 
+			return new HashSet<Record>();
 		for (Ref r : refs) {
 			String currDirectory = r.getPageDirectory();
 			long id = r.getRecordId();
@@ -1115,8 +1127,9 @@ public class Table implements Serializable {
 		// int colIndex = getColIdx(colName);
 
 		if (hasIndex(colName)) {
-			System.out.println("USING INDEX");
+			System.out.println("USING INDEX" + colName);
 			BPTree tree = colNameIndex.get(colName);
+			this.dispalyIndex(colName);
 			ans = getRecordsFromRef(tree.search(val));
 		} else if (colName.equals(getClusteringKey())) {
 			System.out.println("USING CLUSTRING KEY");
