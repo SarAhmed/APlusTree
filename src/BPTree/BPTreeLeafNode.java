@@ -200,7 +200,9 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 
 		
 		for (int i = 0; i < numberOfKeys; ++i)
-			if (this.getKey(i).compareTo(key) == 0)
+//			if (this.getKey(i).compareTo(key) == 0)
+//				return this.getRecord(i);
+			if (this.getKey(i).equals(key))
 				return this.getRecord(i);
 		return null;
 	}
@@ -265,7 +267,9 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 		Vector<Ref> result = new Vector<Ref>();
 
 		for (int i = 0; i < numberOfKeys; ++i) {
-			if (this.getKey(i).compareTo(key) != 0) {
+//			if (this.getKey(i).compareTo(key) != 0) {
+			if (!this.getKey(i).equals(key) ) {
+
 				result.addAll(this.getRecord(i));
 			}
 		}
@@ -305,7 +309,9 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	public boolean delete(T key, BPTreeInnerNode<T> parent, int ptr, Ref ref) throws IOException {
 
 		for (int i = 0; i < numberOfKeys; ++i)
-			if (keys[i].compareTo(key) == 0) {
+//			if (keys[i].compareTo(key) == 0) {
+			if (keys[i].equals(key) ) {
+
 				this.deleteAt(i, ref);
 				if (i == 0 && ptr > 0) {
 					// update key at parent

@@ -219,6 +219,7 @@ public class BPTreeInnerNode<T extends Comparable<T>> extends BPTreeNode<T> impl
 			if (isRoot()) {
 				this.getFirstChild().setRoot(true);
 				this.setRoot(false);
+				// edited 
 				File file = new File(this.getDirectory());
 				if(file.exists())
 					file.delete();

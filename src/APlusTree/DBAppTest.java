@@ -11,19 +11,19 @@ public class DBAppTest {
 		DBApp db= new DBApp();
 		//	testUpdate(db);
 		//db.createBTreeIndex("Ahmed" ,"name");
-		testInsert2(db);
-
+	//	testInsert2(db);
 		
-
-		System.out.println("......................................................................");
 		//testDelete(db);
-			//testInsert(db);
-		 //db.createBTreeIndex("Ahmed", "id");
-
+		//	testInsert(db);
+		 db.createRTreeIndex("Ahmed", "poly");
+		 select(db);
+			//	testDelete(db);
+				System.out.println("......................................................................");
+//testUpdate(db);
 			//select(db);
 			System.out.println(db.displayTable("Ahmed"));
 			Table t = db.getTable("Ahmed");
-			t.dispalyIndex("id");//t.dispalyIndex("name");
+			t.dispalyIndex("poly");//t.dispalyIndex("name");
 
 			
 	}
@@ -34,28 +34,38 @@ public class DBAppTest {
 		// 1.Student Table
 		String tableName = "Ahmed";
 		Hashtable<String, String> htblColNameType = new Hashtable<String, String>();
-		
-		  htblColNameType.put("id", "java.lang.Integer"); htblColNameType.put("name",
-		  "java.lang.String"); // htblColNameType.put("date", "java.util.Date");
-		  db.createTable(tableName, "id", htblColNameType);
-		 
+		htblColNameType.put("id", "java.lang.Integer");
+		htblColNameType.put("name", "java.lang.String");
+		htblColNameType.put("gpa", "java.lang.Integer");
+		htblColNameType.put("Bola", "java.lang.Double");
+		htblColNameType.put("poly", "java.awt.Polygon");
+		htblColNameType.put("EntryDate", "java.util.Date");
 
+		db.createTable(tableName, "poly", htblColNameType);
 		Random rnd = new Random();
 
-		for (int i = 0; i < 6; i++) {
+		for (int i = 0; i < 100; i++) {
 			Hashtable<String, Object> htblColNameValue = new Hashtable();
-			int id = i;
-			htblColNameValue.put("id", new Integer(i));
-			htblColNameValue.put("name", "aman" + id);
-			//Calendar cal = Calendar.getInstance();
-			//cal.set(Calendar.Month, 1)
-			/*
-			 * cal.set(2020+i, i%12+1, (i)%30 ,0, 0, 0); cal.set(Calendar.MILLISECOND,0);
-			 * Date date = cal.getTime(); htblColNameValue.put("date",date);
-			 */
+			int id = rnd.nextInt(10);
+			htblColNameValue.put("id", new Integer(id));
+			htblColNameValue.put("name", new String("Ali" + (id)));
+			htblColNameValue.put("gpa", new Integer(rnd.nextInt(100)));
+			boolean xa = i % 2 == 0;
+			htblColNameValue.put("Bola", rnd.nextDouble());
+			int n = 3 + rnd.nextInt(5);
+			int[] x = new int[n];
+			int[] y = new int[n];
+			for (int j = 0; j < n; j++) {
+				x[j] = rnd.nextInt(10);
+				y[j] = rnd.nextInt(10);
+			}
+			int d = rnd.nextInt(10) + 1;
+			int m = rnd.nextInt(10) + 1;
+			htblColNameValue.put("EntryDate", new Date("2000/" + m + "/" + d));
+			htblColNameValue.put("poly", new Polygon(x, y, n));
 			db.insertIntoTable("Ahmed", htblColNameValue);
 
-			}
+		}
 
 	}
 	public static void testInsert2(DBApp db) throws Exception {
@@ -71,12 +81,12 @@ public class DBAppTest {
 			int id = i;
 			htblColNameValue.put("id", new Integer(i));
 			htblColNameValue.put("name", "aman" + 1502);
-//			Calendar cal = Calendar.getInstance();
-//			//cal.set(Calendar.Month, 1)
-//			cal.set(2020+i, i%12+1, (i)%30 ,0, 0, 0);
-//			cal.set(Calendar.MILLISECOND,0);
-//			Date date = cal.getTime();
-//			htblColNameValue.put("date",date);
+			Calendar cal = Calendar.getInstance();
+			//cal.set(Calendar.Month, 1)
+			cal.set(2020+i, i%12+1, (i)%30 ,0, 0, 0);
+			cal.set(Calendar.MILLISECOND,0);
+			Date date = cal.getTime();
+			htblColNameValue.put("date",date);
 			db.insertIntoTable("Ahmed", htblColNameValue);
 
 			}
@@ -90,9 +100,17 @@ public class DBAppTest {
 		htblColNameValue.clear();
 		// htblColNameValue.put("Bola", new Double(0.7054163647592768));
 
-		htblColNameValue.put("id", 4);
-//		int [] x = {3,8,9,8} , y = {5,4,6,0};
-//		htblColNameValue.put("poly", new Poygon(x,y,4));
+		/*
+		 * htblColNameValue.put("id", 7); int [] x = {1,0,8,4,7,3,4}; int [] y =
+		 * {2,0,0,2,7,9,9};
+		 */
+		Calendar cal = Calendar.getInstance();
+		//cal.set(Calendar.Month, 1)
+		cal.set(2000, 4, 1 ,0, 0, 0);
+		cal.set(Calendar.MILLISECOND,0);
+		Date date = cal.getTime();
+		htblColNameValue.put("EntryDate",date);
+	//	htblColNameValue.put("poly", new Polygon(x,y,7));
 //		htblColNameValue.put("gpa", 16);
 
 		db.deleteFromTable(tableName, htblColNameValue);
@@ -104,20 +122,36 @@ public class DBAppTest {
 
 		Hashtable<String, Object> htblColNameValue = new Hashtable();
 		htblColNameValue.clear();
-		// htblColNameValue.put("gpa", new Integer(8));
-		htblColNameValue.put("id", 5);
+		// htblColNameValue.put("gpa", new Integer(8)); */
+		Calendar cal = Calendar.getInstance();
+		//cal.set(Calendar.Month, 1)
+		cal.set(2020, 4, 1 ,0, 0, 0);
+		cal.set(Calendar.MILLISECOND,0);
+		Date date = cal.getTime();
+		htblColNameValue.put("EntryDate",date);
+		htblColNameValue.put("id", 99);
 		htblColNameValue.put("name", "aman5555");
 
 
-		db.updateTable(tableName, "1", htblColNameValue);
+		db.updateTable(tableName, "(8 ,3 ) (7 ,1 ) (8 ,0 )", htblColNameValue);
 
 	}
+	//(1 ,2 ) (0 ,0 ) (8 ,0 ) (4 ,2 ) (7 ,7 ) (3 ,9 ) (4 ,9 )
 
 	public static void select(DBApp db) throws Exception {
+		//int[] x = new int[7];
+//		int[] y = new int[7];
+		Calendar cal = Calendar.getInstance();
+		//cal.set(Calendar.Month, 1)
+		cal.set(2020, 4, 1 ,0, 0, 0);
+		cal.set(Calendar.MILLISECOND,0);
+		Date date = cal.getTime();
+		int [] x = {1,0,8,4,7,3,4};
+		int [] y = {2,0,0,2,7,9,9};
 		String tableName = "Ahmed";
-		String columnName = "name";
+		String columnName = "EntryDate";
 		String opreator = "=";
-		String val = "SalmaSarahAmannnnnn1502";
+		Date val =cal.getTime();
 		SQLTerm arr[] = new SQLTerm[2];
 		String operator[] = {"OR"};
 

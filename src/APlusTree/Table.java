@@ -16,6 +16,7 @@ import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -197,11 +198,15 @@ public class Table implements Serializable {
 				Comparable currKey = getComparable(currRecord.get(colIdx), type);
 				switch (Op) {
 				case "=":
-					if (currKey.compareTo(val) == 0)
+//					if (currKey.compareTo(val) == 0)
+//						ans.add(currRecord);
+					if (currKey.equals(val))
 						ans.add(currRecord);
 					break;
 				case "!=":
-					if (currKey.compareTo(val) != 0)
+//					if (currKey.compareTo(val) != 0)
+//						ans.add(currRecord);
+					if (!currKey.equals(val))
 						ans.add(currRecord);
 					break;
 				case ">":
@@ -676,7 +681,7 @@ public class Table implements Serializable {
 				Record currRecord = p.get(k);
 
 				Comparable currKey = getComparable(currRecord.get(keyIdx), type);
-				if (currKey.compareTo(searchKey) == 0) {
+				if (currKey.equals(searchKey)) {
 					for (Entry<String, Object> entry : htblColNameValue.entrySet()) {
 						
 						String colName = entry.getKey();
@@ -871,7 +876,9 @@ public class Table implements Serializable {
 			if (htblColNameValue.containsKey(header[i].trim())) {
 				Vector<Object> r = record.getValues();
 //Changed the .equals to comapreTO
-				if (((Comparable) htblColNameValue.get(header[i].trim())).compareTo((Comparable) r.get(i)) != 0)
+//				if (((Comparable) htblColNameValue.get(header[i].trim())).compareTo((Comparable) r.get(i)) != 0)
+//					return false;
+				if (!((Comparable) htblColNameValue.get(header[i].trim())).equals((Comparable) r.get(i)) )
 					return false;
 			}
 		}
@@ -1147,7 +1154,11 @@ public class Table implements Serializable {
 				for (int j = startIdx; j < pageRecords.size(); j++) {
 					Record currRecord = pageRecords.get(j);
 					Comparable currKey = getComparable(currRecord.get(getColIdx(colName)), type);
-					if (currKey.compareTo(val) == 0)
+					
+					//edited
+//					if (currKey.compareTo(val) == 0)
+//						ans.add(currRecord);
+					if (currKey.equals(val))
 						ans.add(currRecord);
 					else
 						break;
@@ -1347,7 +1358,9 @@ public class Table implements Serializable {
 
 		switch (op) {
 		case "=":
-			return recordVal.compareTo(val) == 0;
+//			return recordVal.compareTo(val) == 0;
+			return recordVal.equals(val);
+
 
 		case ">":
 
@@ -1360,7 +1373,9 @@ public class Table implements Serializable {
 		case "<=":
 			return recordVal.compareTo(val) <= 0;
 		case "!=":
-			return recordVal.compareTo(val) != 0;
+//			return recordVal.compareTo(val) != 0;
+			return !recordVal.equals(val) ;
+
 
 		}
 		return false;
