@@ -11,6 +11,8 @@ import java.util.*;
 
 import static java.util.Objects.hash;
 
+import java.awt.Polygon;
+
 public class Record implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -132,7 +134,7 @@ public class Record implements Serializable {
 	 * false; } return true; }
 	 */
 
-//	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 //		String s1 = new String("sarah");
 //		String s2 = new String("sarah");
 //		// System.out.println(s1==s2);
@@ -153,5 +155,8 @@ public class Record implements Serializable {
 //		Vector<Object> d2 = new Vector<>();
 //		d2.add(new Integer(1));
 //		System.out.println(d1.equals(d2));
-//	}
+		Record r = new Record("Ahmed");
+		r.add("aman");r.add(5);r.add(true);r.add(new Date());r.add(new DBPolygon(new Polygon()));
+		for(Object p : r.vals) System.out.println(p.getClass());
+   }
 }

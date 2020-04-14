@@ -15,15 +15,15 @@ public class DBAppTest {
 		
 		//testDelete(db);
 		//	testInsert(db);
-		 db.createRTreeIndex("Ahmed", "poly");
+		// db.createBTreeIndex("Ahmed", "EntryDate");
 		 select(db);
 			//	testDelete(db);
 				System.out.println("......................................................................");
-//testUpdate(db);
+				testUpdate(db);
 			//select(db);
 			System.out.println(db.displayTable("Ahmed"));
-			Table t = db.getTable("Ahmed");
-			t.dispalyIndex("poly");//t.dispalyIndex("name");
+		//	Table t = db.getTable("Ahmed");
+		//	t.dispalyIndex("poly");//t.dispalyIndex("name");
 
 			
 	}
@@ -37,11 +37,11 @@ public class DBAppTest {
 		htblColNameType.put("id", "java.lang.Integer");
 		htblColNameType.put("name", "java.lang.String");
 		htblColNameType.put("gpa", "java.lang.Integer");
-		htblColNameType.put("Bola", "java.lang.Double");
-		htblColNameType.put("poly", "java.awt.Polygon");
+		//htblColNameType.put("Bola", "java.lang.Double");
+		//htblColNameType.put("poly", "java.awt.Polygon");
 		htblColNameType.put("EntryDate", "java.util.Date");
 
-		db.createTable(tableName, "poly", htblColNameType);
+		db.createTable(tableName, "EntryDate", htblColNameType);
 		Random rnd = new Random();
 
 		for (int i = 0; i < 100; i++) {
@@ -51,7 +51,7 @@ public class DBAppTest {
 			htblColNameValue.put("name", new String("Ali" + (id)));
 			htblColNameValue.put("gpa", new Integer(rnd.nextInt(100)));
 			boolean xa = i % 2 == 0;
-			htblColNameValue.put("Bola", rnd.nextDouble());
+		//	htblColNameValue.put("Bola", rnd.nextDouble());
 			int n = 3 + rnd.nextInt(5);
 			int[] x = new int[n];
 			int[] y = new int[n];
@@ -61,8 +61,8 @@ public class DBAppTest {
 			}
 			int d = rnd.nextInt(10) + 1;
 			int m = rnd.nextInt(10) + 1;
-			htblColNameValue.put("EntryDate", new Date("2000/" + m + "/" + d));
-			htblColNameValue.put("poly", new Polygon(x, y, n));
+			htblColNameValue.put("EntryDate", new Date("2000/" + 4 + "/" + d));
+	//		htblColNameValue.put("poly", new Polygon(x, y, n));
 			db.insertIntoTable("Ahmed", htblColNameValue);
 
 		}
@@ -106,7 +106,7 @@ public class DBAppTest {
 		 */
 		Calendar cal = Calendar.getInstance();
 		//cal.set(Calendar.Month, 1)
-		cal.set(2000, 4, 1 ,0, 0, 0);
+		cal.set(2000, 3, 1 ,0, 0, 0);
 		cal.set(Calendar.MILLISECOND,0);
 		Date date = cal.getTime();
 		htblColNameValue.put("EntryDate",date);
@@ -125,15 +125,15 @@ public class DBAppTest {
 		// htblColNameValue.put("gpa", new Integer(8)); */
 		Calendar cal = Calendar.getInstance();
 		//cal.set(Calendar.Month, 1)
-		cal.set(2020, 4, 1 ,0, 0, 0);
+		cal.set(2000, 3, 2 ,0, 0, 0);
 		cal.set(Calendar.MILLISECOND,0);
 		Date date = cal.getTime();
-		htblColNameValue.put("EntryDate",date);
-		htblColNameValue.put("id", 99);
+		//htblColNameValue.put("EntryDate",date);
+		//htblColNameValue.put("id", 99);
 		htblColNameValue.put("name", "aman5555");
 
 
-		db.updateTable(tableName, "(8 ,3 ) (7 ,1 ) (8 ,0 )", htblColNameValue);
+		db.updateTable(tableName, "2000-4-3", htblColNameValue);
 
 	}
 	//(1 ,2 ) (0 ,0 ) (8 ,0 ) (4 ,2 ) (7 ,7 ) (3 ,9 ) (4 ,9 )
@@ -143,17 +143,18 @@ public class DBAppTest {
 //		int[] y = new int[7];
 		Calendar cal = Calendar.getInstance();
 		//cal.set(Calendar.Month, 1)
-		cal.set(2020, 4, 1 ,0, 0, 0);
+		cal.set(2000, 3, 2 ,0, 0, 0);
 		cal.set(Calendar.MILLISECOND,0);
 		Date date = cal.getTime();
 		int [] x = {1,0,8,4,7,3,4};
 		int [] y = {2,0,0,2,7,9,9};
 		String tableName = "Ahmed";
-		String columnName = "EntryDate";
+		String columnName = "name";
 		String opreator = "=";
-		Date val =cal.getTime();
-		SQLTerm arr[] = new SQLTerm[2];
-		String operator[] = {"OR"};
+		String val ="aman5555";
+		System.out.println(val);
+		SQLTerm arr[] = new SQLTerm[3];
+		String operator[] = {"OR","OR"};
 
 		arr[0] = new SQLTerm(tableName, columnName, opreator, val);
 		/*
@@ -162,8 +163,13 @@ public class DBAppTest {
 		 */
 		String columnName2 = "id";
 		String opreator2 = "=";
-		int val2 = 1503;
+		int val2 = 4;
 		arr[1] = new SQLTerm(tableName, columnName2, opreator2, val2);
+		
+		String columnName3 = "id";
+		String opreator3 = "=";
+		int val3 = 7;
+		arr[2] = new SQLTerm(tableName, columnName3, opreator3, val3);
 		
 		Iterator itr = db.selectFromTable(arr, operator);
 

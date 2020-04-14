@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,6 +41,7 @@ public class Table implements Serializable {
 	public void dispalyIndex(String colName) {
 		System.out.println(colNameIndex.get(colName));
 	}
+	
 	public Table(String path, String strTableName, Hashtable<String, String> htblColNameType, String strKeyColName,
 
 			int MaximumRowsCountinPage, int nodeSize) throws IOException {
@@ -1451,11 +1453,11 @@ public class Table implements Serializable {
 	public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws Exception {
 		if(isLinearSearch(arrSQLTerms, strarrOperators)) {
 			System.out.println("selectFromTableLinear^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-			return selectFromTableLinear(arrSQLTerms, strarrOperators);
+			return  selectFromTableLinear(arrSQLTerms, strarrOperators);
 		}else {
 			System.out.println("selectFromTableNotLinear^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 
-			return selectFromTableNotLinear(arrSQLTerms, strarrOperators);
+			return  selectFromTableNotLinear(arrSQLTerms, strarrOperators);
 		}
 	}
 			
