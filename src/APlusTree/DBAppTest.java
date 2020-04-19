@@ -151,25 +151,25 @@ public class DBAppTest {
 		String tableName = "Ahmed";
 		String columnName = "name";
 		String opreator = "=";
-		String val ="aman5555";
+		String val ="Ali9";
 		System.out.println(val);
-		SQLTerm arr[] = new SQLTerm[3];
-		String operator[] = {"OR","OR"};
+		SQLTerm arr[] = new SQLTerm[2];
+		String operator[] = {"OR"};
 
 		arr[0] = new SQLTerm(tableName, columnName, opreator, val);
 		/*
 		 * String columnName1 = "name"; String opreator1 = "="; String val1 = "aman5";
 		 * arr[1] = new SQLTerm(tableName, columnName1, opreator1, val1);
 		 */
-		String columnName2 = "id";
+		String columnName2 = "name";
 		String opreator2 = "=";
-		int val2 = 4;
+		String val2 = "aman5555";
 		arr[1] = new SQLTerm(tableName, columnName2, opreator2, val2);
 		
 		String columnName3 = "id";
-		String opreator3 = "=";
-		int val3 = 7;
-		arr[2] = new SQLTerm(tableName, columnName3, opreator3, val3);
+		String opreator3 = ">";
+		int val3 = 0;
+		//arr[0] = new SQLTerm(tableName, columnName3, opreator3, val3);
 		
 		Iterator itr = db.selectFromTable(arr, operator);
 
