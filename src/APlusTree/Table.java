@@ -989,7 +989,7 @@ public class Table implements Serializable {
 	 * inserting in it.
 	 * 
 	 * @param strColName The name of the column which index is created on
-	 * @throws DBEngineException      If columns, foreign keys or the primary key
+	 * @throws DBAppException      If columns, foreign keys or the primary key
 	 *                                are not valid
 	 * @throws FileNotFoundException  If an error occurred in the stored table file
 	 * @throws IOException            If an I/O error occurred

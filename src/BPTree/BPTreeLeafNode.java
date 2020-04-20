@@ -366,9 +366,6 @@ public class BPTreeLeafNode<T extends Comparable<T>> extends BPTreeNode<T> imple
 	/**
 	 * tries to borrow a key from the left or right sibling
 	 * 
-	 * @param parent the parent of the current node
-	 * @param ptr    the index of the parent pointer that points to this node
-	 * @return true if borrow is done successfully and false otherwise
 	 * @throws IOException 
 	 */
 	public void deleteVectorAt(int index) throws IOException {
