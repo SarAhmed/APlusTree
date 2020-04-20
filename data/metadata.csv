@@ -1,5 +1,0 @@
-Table Name, Column Name, Column Type, ClusteringKey, Indexed
-Ahmed, gpa, java.lang.Integer, False, False
-Ahmed, name, java.lang.String, False, False
-Ahmed, EntryDate, java.util.Date, True, True
-Ahmed, id, java.lang.Integer, False, False

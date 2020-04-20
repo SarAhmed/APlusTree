@@ -14,12 +14,12 @@ public class DBAppTest {
 	//	testInsert2(db);
 		
 		//testDelete(db);
-		//	testInsert(db);
+			testInsert(db);
 		// db.createBTreeIndex("Ahmed", "EntryDate");
-		 select(db);
+		// select(db);
 			//	testDelete(db);
 				System.out.println("......................................................................");
-				testUpdate(db);
+			//	testUpdate(db);
 			//select(db);
 			System.out.println(db.displayTable("Ahmed"));
 		//	Table t = db.getTable("Ahmed");
