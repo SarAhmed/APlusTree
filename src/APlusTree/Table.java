@@ -38,10 +38,11 @@ public class Table implements Serializable {
 	private Hashtable<String, String> columnTypes;
 	private Hashtable<String, BPTree> colNameIndex;
 	private Vector<String> pagesDirectory;
+
 	public void dispalyIndex(String colName) {
 		System.out.println(colNameIndex.get(colName));
 	}
-	
+
 	public Table(String path, String strTableName, Hashtable<String, String> htblColNameType, String strKeyColName,
 
 			int MaximumRowsCountinPage, int nodeSize) throws IOException {
@@ -58,9 +59,11 @@ public class Table implements Serializable {
 		initializeColumnsHeader();
 		save();
 	}
+
 	public String getType(String colName) {
 		return columnTypes.get(colName);
 	}
+
 	private void initializeColumnsHeader() throws IOException {
 		tableHeader = "";
 		ArrayList<String[]> colInfo = getColInfo();
@@ -188,7 +191,7 @@ public class Table implements Serializable {
 	}
 
 	@SuppressWarnings("unchecked")
-	private HashSet<Record> linearSearch(Comparable val, String colName, String Op) throws IOException {
+	private HashSet<Record> linearSearch(Comparable val, String colName, String Op) throws IOException, DBAppException {
 		String type = this.columnTypes.get(colName).trim();
 		HashSet<Record> ans = new HashSet<Record>();
 		int colIdx = getColIdx(colName);
@@ -200,14 +203,14 @@ public class Table implements Serializable {
 				Comparable currKey = getComparable(currRecord.get(colIdx), type);
 				switch (Op) {
 				case "=":
-//					if (currKey.compareTo(val) == 0)
-//						ans.add(currRecord);
+					// if (currKey.compareTo(val) == 0)
+					// ans.add(currRecord);
 					if (currKey.equals(val))
 						ans.add(currRecord);
 					break;
 				case "!=":
-//					if (currKey.compareTo(val) != 0)
-//						ans.add(currRecord);
+					// if (currKey.compareTo(val) != 0)
+					// ans.add(currRecord);
 					if (!currKey.equals(val))
 						ans.add(currRecord);
 					break;
@@ -227,6 +230,7 @@ public class Table implements Serializable {
 					if (currKey.compareTo(val) <= 0)
 						ans.add(currRecord);
 					break;
+				default: throw new DBAppException("Invalid operator");
 
 				}
 
@@ -556,12 +560,12 @@ public class Table implements Serializable {
 		int month = Integer.parseInt(st.nextToken());
 		int day = Integer.parseInt(st.nextToken());
 		Calendar cal = Calendar.getInstance();
-//		cal.set(Calendar.YEAR, year);
-//		cal.set(Calendar.MONTH, month - 1);
-//		cal.set(Calendar.DAY_OF_MONTH, day);
-		cal.set(year, month-1, day,0, 0, 0);
-		cal.set(Calendar.MILLISECOND,0);
-		
+		// cal.set(Calendar.YEAR, year);
+		// cal.set(Calendar.MONTH, month - 1);
+		// cal.set(Calendar.DAY_OF_MONTH, day);
+		cal.set(year, month - 1, day, 0, 0, 0);
+		cal.set(Calendar.MILLISECOND, 0);
+
 		Date dateRepresentation = cal.getTime();
 
 		return dateRepresentation;
@@ -597,11 +601,10 @@ public class Table implements Serializable {
 				polygonColumns.add(e.getKey());
 			}
 		}
-		
-		
-		  if(htblColNameValue.containsKey(getClusteringKey())) throw new
-		  DBAppException("You can NOT update the ClusteringKey");
-		 
+
+		if (htblColNameValue.containsKey(getClusteringKey()))
+			throw new DBAppException("You can NOT update the ClusteringKey");
+
 		for (String s : polygonColumns) {
 			Polygon p = (Polygon) htblColNameValue.get(s);
 			htblColNameValue.put(s, new DBPolygon(p));
@@ -646,7 +649,7 @@ public class Table implements Serializable {
 		if (hasIndex(this.getClusteringKey())) {
 			BPTree tree = colNameIndex.get(getClusteringKey());
 			Vector<Ref> ref = tree.search(searchKey);
-//			pagesDirectory.indexOf(ref.get(0).getPageDirectory());
+			// pagesDirectory.indexOf(ref.get(0).getPageDirectory());
 			if (ref == null || ref.size() == 0)
 				return true;
 			String minDir = ref.get(0).getPageDirectory();
@@ -685,9 +688,9 @@ public class Table implements Serializable {
 				Comparable currKey = getComparable(currRecord.get(keyIdx), type);
 				if (currKey.equals(searchKey)) {
 					for (Entry<String, Object> entry : htblColNameValue.entrySet()) {
-						
+
 						String colName = entry.getKey();
-						//System.out.println(colName);
+						// System.out.println(colName);
 						// after adding index
 						Comparable value = (Comparable) entry.getValue();
 						int colIdx = getColIdx(colName);
@@ -710,7 +713,7 @@ public class Table implements Serializable {
 					stop = true;
 					System.out.println(searchKey);
 					System.out.println(searchKey.compareTo(currKey));
-					
+
 					System.out.println("I stopped " + currKey);
 					break;
 				}
@@ -737,7 +740,7 @@ public class Table implements Serializable {
 			Polygon p = (Polygon) htblColNameValue.get(s);
 			htblColNameValue.put(s, new DBPolygon(p));
 		}
-		
+
 		String clusteringKey = getClusteringKey();
 
 		if (!checkValidInput(htblColNameValue)) {
@@ -756,8 +759,9 @@ public class Table implements Serializable {
 					Comparable searchKey = getComparable(htblColNameValue.get(col), type);
 					HashSet<String> usedPages = new HashSet<String>();
 					Vector<Ref> ref = tree.search(searchKey);
-					if(ref == null) ref = new Vector<Ref>(); 					//changed 7-4
-					if ( ref.size() != 0)
+					if (ref == null)
+						ref = new Vector<Ref>(); // changed 7-4
+					if (ref.size() != 0)
 						pages = new Vector<String>();
 					for (Ref r : ref) {
 						String p = r.getPageDirectory();
@@ -877,10 +881,12 @@ public class Table implements Serializable {
 		for (int i = 0; i < header.length - 1; i++) {
 			if (htblColNameValue.containsKey(header[i].trim())) {
 				Vector<Object> r = record.getValues();
-//Changed the .equals to comapreTO
-//				if (((Comparable) htblColNameValue.get(header[i].trim())).compareTo((Comparable) r.get(i)) != 0)
-//					return false;
-				if (!((Comparable) htblColNameValue.get(header[i].trim())).equals((Comparable) r.get(i)) )
+				// Changed the .equals to comapreTO
+				// if (((Comparable)
+				// htblColNameValue.get(header[i].trim())).compareTo((Comparable) r.get(i)) !=
+				// 0)
+				// return false;
+				if (!((Comparable) htblColNameValue.get(header[i].trim())).equals((Comparable) r.get(i)))
 					return false;
 			}
 		}
@@ -963,7 +969,7 @@ public class Table implements Serializable {
 		BufferedReader bufferedReader = new BufferedReader(fileReader);
 		String line = "";
 		write.append(bufferedReader.readLine() + "\n"); // To discard first line [Table Name, Column Name, Column Type,
-														// Key, Indexed]
+		// Key, Indexed]
 		while ((line = bufferedReader.readLine()) != null) {
 			String[] metaFile = line.split(", ");
 			if (metaFile[0].equals(this.tableName) && metaFile[1].equals(colName)) {
@@ -989,7 +995,7 @@ public class Table implements Serializable {
 	 * inserting in it.
 	 * 
 	 * @param strColName The name of the column which index is created on
-	 * @throws DBAppException      If columns, foreign keys or the primary key
+	 * @throws DBAppException         If columns, foreign keys or the primary key
 	 *                                are not valid
 	 * @throws FileNotFoundException  If an error occurred in the stored table file
 	 * @throws IOException            If an I/O error occurred
@@ -1010,22 +1016,22 @@ public class Table implements Serializable {
 		String type = columnTypes.get(strColName);
 		int colPos = this.getColIdx(strColName);
 		BPTree tree = null;
-		String pagingPath=directory + tableName + "_" + strColName;
+		String pagingPath = directory + tableName + "_" + strColName;
 		// System.out.println(type);
 		if (type.equals("java.lang.Integer")) {
 			// System.out.println("goua 2l if");
-			tree = new BPTree<Integer>(NodeSize,pagingPath);
+			tree = new BPTree<Integer>(NodeSize, pagingPath);
 			// System.out.println(tree.toString());
 		} else if (type.equals("java.lang.String")) {
-			tree = new BPTree<String>(NodeSize,pagingPath);
+			tree = new BPTree<String>(NodeSize, pagingPath);
 		} else if (type.equals("java.lang.Double")) {
-			tree = new BPTree<Double>(NodeSize,pagingPath);
+			tree = new BPTree<Double>(NodeSize, pagingPath);
 		} else if (type.equals("java.awt.Polygon")) {
-			tree = new BPTree<DBPolygon>(NodeSize,pagingPath);
+			tree = new BPTree<DBPolygon>(NodeSize, pagingPath);
 		} else if (type.equals("java.util.Date")) {
-			tree = new BPTree<Date>(NodeSize,pagingPath);
+			tree = new BPTree<Date>(NodeSize, pagingPath);
 		} else if (type.equals("java.lang.Boolean")) {
-			tree = new BPTree<Boolean>(NodeSize,pagingPath);
+			tree = new BPTree<Boolean>(NodeSize, pagingPath);
 
 		}
 		colNameIndex.put(strColName, tree);
@@ -1050,18 +1056,18 @@ public class Table implements Serializable {
 		this.save();
 	}
 
-//	public static HashSet<Record> and(HashSet<Record> a, HashSet<Record> b) {
-//		HashSet<Record> ans = new HashSet<Record>();
-//		for (Record r : a) {
-//			if (b.contains(r))
-//				ans.add(r);
-//		}
-////		for(Record r:b) {
-////			if(a.contains(r))ans.add(r);
-////		}
-//		return ans;
-//
-//	}
+	// public static HashSet<Record> and(HashSet<Record> a, HashSet<Record> b) {
+	// HashSet<Record> ans = new HashSet<Record>();
+	// for (Record r : a) {
+	// if (b.contains(r))
+	// ans.add(r);
+	// }
+	//// for(Record r:b) {
+	//// if(a.contains(r))ans.add(r);
+	//// }
+	// return ans;
+	//
+	// }
 
 	public HashSet<Record> and(HashSet<Record> a, SQLTerm sqlTerm) throws DBAppException, IOException {
 		HashSet<Record> ans = new HashSet<Record>();
@@ -1105,8 +1111,8 @@ public class Table implements Serializable {
 
 	private HashSet<Record> getRecordsFromRef(Vector<Ref> refs) {
 		HashMap<String, HashSet<Long>> pageToRecord = new HashMap();
-		//updated 7-4
-		if( refs == null) 
+		// updated 7-4
+		if (refs == null)
 			return new HashSet<Record>();
 		for (Ref r : refs) {
 			String currDirectory = r.getPageDirectory();
@@ -1156,10 +1162,10 @@ public class Table implements Serializable {
 				for (int j = startIdx; j < pageRecords.size(); j++) {
 					Record currRecord = pageRecords.get(j);
 					Comparable currKey = getComparable(currRecord.get(getColIdx(colName)), type);
-					
-					//edited
-//					if (currKey.compareTo(val) == 0)
-//						ans.add(currRecord);
+
+					// edited
+					// if (currKey.compareTo(val) == 0)
+					// ans.add(currRecord);
 					if (currKey.equals(val))
 						ans.add(currRecord);
 					else
@@ -1283,8 +1289,8 @@ public class Table implements Serializable {
 			ans = getRecordsFromRef(tree.searchSmallerThan(val));
 		} else if (colName.equals(getClusteringKey())) {
 			System.out.println("USING CLUSTRING KEY");
-//			Hashtable<String, Object> t = new Hashtable<String, Object>();
-//			t.put(colName, val);
+			// Hashtable<String, Object> t = new Hashtable<String, Object>();
+			// t.put(colName, val);
 
 			String type = this.columnTypes.get(colName).trim();
 			for (int i = 0; i < pagesDirectory.size(); i++) {
@@ -1360,9 +1366,8 @@ public class Table implements Serializable {
 
 		switch (op) {
 		case "=":
-//			return recordVal.compareTo(val) == 0;
+			// return recordVal.compareTo(val) == 0;
 			return recordVal.equals(val);
-
 
 		case ">":
 
@@ -1375,16 +1380,16 @@ public class Table implements Serializable {
 		case "<=":
 			return recordVal.compareTo(val) <= 0;
 		case "!=":
-//			return recordVal.compareTo(val) != 0;
-			return !recordVal.equals(val) ;
-
+			// return recordVal.compareTo(val) != 0;
+			return !recordVal.equals(val);
+		default : throw new DBAppException("Invalid operator");
 
 		}
-		return false;
+		
 
 	}
 
-//Not tested
+	// Not tested
 	public boolean matchCondition(Record r, SQLTerm[] arrSQLTerms, String[] strarrOperators)
 			throws IOException, DBAppException {
 
@@ -1428,15 +1433,18 @@ public class Table implements Serializable {
 		if (arrSQLTerms.length == 0)
 			return true;
 
-//		int i=1;
-//		if(strarrOperators.length!=0&&strarrOperators[0].toUpperCase().trim().equals("AND")) {
-//			boolean hasIndex=(hasIndex(arrSQLTerms[0].get_strColumnName())||arrSQLTerms[0].get_strColumnName().equals(getClusteringKey()));
-//			while(i-1<strarrOperators.length&&strarrOperators[i-1].toUpperCase().trim().equals("AND")) {
-//				hasIndex|=hasIndex(arrSQLTerms[i].get_strColumnName())||arrSQLTerms[i].get_strColumnName().equals(getClusteringKey());
-//				i++;
-//			}
-//			if(!hasIndex)return true;
-//		}
+		// int i=1;
+		// if(strarrOperators.length!=0&&strarrOperators[0].toUpperCase().trim().equals("AND"))
+		// {
+		// boolean
+		// hasIndex=(hasIndex(arrSQLTerms[0].get_strColumnName())||arrSQLTerms[0].get_strColumnName().equals(getClusteringKey()));
+		// while(i-1<strarrOperators.length&&strarrOperators[i-1].toUpperCase().trim().equals("AND"))
+		// {
+		// hasIndex|=hasIndex(arrSQLTerms[i].get_strColumnName())||arrSQLTerms[i].get_strColumnName().equals(getClusteringKey());
+		// i++;
+		// }
+		// if(!hasIndex)return true;
+		// }
 		if (!hasIndex(arrSQLTerms[0].get_strColumnName())
 				&& !arrSQLTerms[0].get_strColumnName().equals(getClusteringKey()))
 			return true;
@@ -1450,30 +1458,35 @@ public class Table implements Serializable {
 		}
 		return false;
 	}
+
 	public Iterator selectFromTable(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws Exception {
-		if(isLinearSearch(arrSQLTerms, strarrOperators)) {
+		if (arrSQLTerms.length != strarrOperators.length + 1)
+			throw new DBAppException("Size of Operators must match size of columns");
+		if (isLinearSearch(arrSQLTerms, strarrOperators)) {
 			System.out.println("selectFromTableLinear^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-			return  selectFromTableLinear(arrSQLTerms, strarrOperators);
-		}else {
+			return selectFromTableLinear(arrSQLTerms, strarrOperators);
+		} else {
 			System.out.println("selectFromTableNotLinear^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 
-			return  selectFromTableNotLinear(arrSQLTerms, strarrOperators);
+			return selectFromTableNotLinear(arrSQLTerms, strarrOperators);
 		}
 	}
-			
-	public Iterator selectFromTableLinear(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws IOException, DBAppException {
-		Vector<Record> result=new Vector<Record>();
-		for(int i=0;i<pagesDirectory.size();i++) {
-			Page p =deserialize(pagesDirectory.get(i));
-			for(int j=0;j<p.size();j++) {
-				Record record =p.get(j);
-				if(matchCondition(record, arrSQLTerms, strarrOperators)) {
+
+	public Iterator selectFromTableLinear(SQLTerm[] arrSQLTerms, String[] strarrOperators)
+			throws IOException, DBAppException {
+		Vector<Record> result = new Vector<Record>();
+		for (int i = 0; i < pagesDirectory.size(); i++) {
+			Page p = deserialize(pagesDirectory.get(i));
+			for (int j = 0; j < p.size(); j++) {
+				Record record = p.get(j);
+				if (matchCondition(record, arrSQLTerms, strarrOperators)) {
 					result.add(record);
 				}
 			}
 		}
 		return result.iterator();
 	}
+
 	public Iterator selectFromTableNotLinear(SQLTerm[] arrSQLTerms, String[] strarrOperators) throws Exception {
 		HashSet<Record> set = new HashSet<Record>();
 		// TO DO check if the array size equal zero

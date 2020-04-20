@@ -14,9 +14,9 @@ public class DBAppTest {
 	//	testInsert2(db);
 		
 		//testDelete(db);
-			testInsert(db);
+			//testInsert(db);
 		// db.createBTreeIndex("Ahmed", "EntryDate");
-		// select(db);
+		 select(db);
 			//	testDelete(db);
 				System.out.println("......................................................................");
 			//	testUpdate(db);
@@ -150,7 +150,7 @@ public class DBAppTest {
 		int [] y = {2,0,0,2,7,9,9};
 		String tableName = "Ahmed";
 		String columnName = "name";
-		String opreator = "=";
+		String opreator = "<";
 		String val ="Ali9";
 		System.out.println(val);
 		SQLTerm arr[] = new SQLTerm[2];
